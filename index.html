@@ -498,11 +498,12 @@ const GIMMICKS = {
 };
 // 小型機の性格。面で初めて出たあとは、ふつうの面にも護衛として混ざる
 const ESC = {
-  fighter: { model: "fighter", hp: 1.4, speed: 1.9, drops: 0, zig: 55 },
-  gull: { model: "gull", hp: 2, speed: 1.7, drops: 1, dive: true },
-  cat: { model: "cat", hp: 3.2, speed: 1.5, drops: 1, size: 1.1 },
-  jet: { model: "jet", hp: 2, speed: 2.9, drops: 0 },
-  jet2: { model: "jet2", hp: 3.4, speed: 2.5, drops: 2, size: 1.12 }
+  // zig は横にくねる幅、wav は上下にうねる幅。戦闘機は速く、まっすぐ飛ばない
+  fighter: { model: "fighter", hp: 1.4, speed: 2.5, drops: 0, zig: 95, wav: 34 },
+  gull: { model: "gull", hp: 2, speed: 2.2, drops: 1, dive: true, zig: 70, wav: 0 },
+  cat: { model: "cat", hp: 3.2, speed: 2.0, drops: 1, size: 1.1, zig: 80, wav: 26 },
+  jet: { model: "jet", hp: 2, speed: 3.4, drops: 0, zig: 60, wav: 20 },
+  jet2: { model: "jet2", hp: 3.4, speed: 3.0, drops: 2, size: 1.12, zig: 50, wav: 16 }
 };
 const FAR = 900;   // 敵はこの距離ぶん奥から、速度を落としながら入ってくる
 const FIRST = Object.keys(GIMMICKS);
@@ -538,13 +539,14 @@ function stageDef(n) {
     n, g,
     names: set.map((k) => GIMMICKS[k]).join("×"),
     count: Math.round(count),
-    speed: (64 + Math.min(60, lv * 2.4) + Math.min(70, Math.max(0, lv - 30) * 0.7)) * (wall ? 1.1 : 1) * (g.has("lowfly") ? 1.25 : 1),
+    speed: (64 + Math.min(60, lv * 2.4)) * (wall ? 1.1 : 1) * (g.has("lowfly") ? 1.25 : 1),
     hpMul: (1 + Math.min(lv, 50) * 0.05 + Math.max(0, lv - 50) * 0.02) * (1 - Math.min(0.3, fails * 0.1)),   // 硬さの伸びは50面から緩める（1面が長くなりすぎるため）
     armored: g.has("armor") ? 1 : n >= 8 ? Math.min(0.35, (n - 7) * 0.04) : 0,
     bombTarget: Math.max(3, 6 + Math.min(6, Math.floor(lv / 6)) - fails),
     wind: g.has("wind") ? (Math.random() < 0.5 ? -1 : 1) * rand(70, 110) : 0,
     grav: g.has("rain") ? 1.5 : 1,          // 雨の日は竹槍が重い
     spearSpeed: g.has("rain") ? 0.92 : 1,
+    fighterMul: 1 + Math.min(0.7, Math.max(0, lv - 30) * 0.01),   // 30面より先で速くなるのは戦闘機だけ
     coinMul: 1 + lv * 0.03,                 // そのぶん稼ぎも面に応じて増える
     dmg: 1 + lv * 0.06 + Math.max(0, lv - 40) * 0.04                      // 面が進むほど、取りこぼしが痛くなる
   };
@@ -1924,13 +1926,13 @@ function spawn(e) {
   if (boss) mat.color.set(0xe9d6a4);
   if (e.gold) { mat.color.set(0xffc94a); mat.specular.set(0xfff0b0); mat.shininess = 120; }
   scene.add(mesh);
-  const speed = def.speed * (e.speed ?? (boss ? 0.62 : paper ? 0.8 : rand(0.9, 1.1)));
+  const speed = def.speed * (e.speed ?? (boss ? 0.62 : paper ? 0.8 : rand(0.9, 1.1))) * (e.model ? def.fighterMul : 1);
   const bombStage = def.g.has("bombs");
   const hp = Math.max(1, (e.hp ?? (boss ? 28 : armored ? 4 : paper ? 1 : bombStage ? 5 : 2)) * (paper ? 1 : def.hpMul));
   const p = {
     mesh, mat, boss, paper, armored, size, hp, maxHp: hp, bar: null,
     giant: !!e.giant, gold: !!e.gold, small: !!e.small, away: !!e.away, zig: e.zig || 0, lit: 0,
-    fighter: !!e.model, jet: e.model === "jet" || e.model === "jet2", app: e.away ? 0 : 1,
+    wav: e.wav || 0, fighter: !!e.model, jet: e.model === "jet" || e.model === "jet2", app: e.away ? 0 : 1,
     pos: V(x, y, e.away ? z : z - FAR),
     // 急降下する機体は、頭上に来るころ屋根すれすれまで下りる
     vel: V(e.vx ?? (e.away ? 0 : -x * 0.04), e.dive ? (-(y - 85) * speed) / (Math.abs(z) - 120) : 0, e.away ? -speed * 1.15 : speed),
@@ -2492,7 +2494,12 @@ function update(dt, real) {
         smoke.emit(tmpV2, V(rand(-3, 3), rand(-3, 3), 0), COL.vapor, 5 * p.size, 0.9, { drag: 0.3, grow: 9, alpha: 0.35 });
       }
       p.pos.y += Math.sin(st.t * 0.9 + p.ph) * 4 * dt;
-      if (p.zig) p.vel.x = Math.cos(st.t * 1.5 + p.ph) * p.zig;
+      // くねり。戦闘機は速い周期で左右に振れ、上下にもうねる（画面の外までは出ない）
+      if (p.zig) {
+        const f = p.fighter ? 2.3 : 1.5;
+        p.vel.x = Math.cos(st.t * f + p.ph) * p.zig - (p.fighter ? p.pos.x * 0.25 : 0);
+      }
+      if (p.wav && p.app <= 0) p.pos.y += Math.cos(st.t * 1.9 + p.ph * 1.7) * p.wav * dt;
       p.mesh.rotation.z = Math.sin(st.t * 0.7 + p.ph) * (p.paper ? 0.35 : 0.04) + p.jolt - (p.fighter ? p.vel.x * 0.006 : 0);
       p.mesh.rotation.x = p.paper ? Math.sin(st.t * 2 + p.ph) * 0.15 : 0;
       if (p.drops > 0 && p.app <= 0 && p.pos.z > p.dropZ) { dropBomb(p); p.drops--; p.dropZ += p.boss ? 110 : 160; }
