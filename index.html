@@ -522,7 +522,11 @@ function stageDef(n) {
     else if (n % 8 === 4) set.push("split");
     else if (n % 4 === 0) set.push("bombs");
   }
+  // 39面から10面ごと（39, 49, 59…）は、小型機の大群だけの面
+  const horde = n > 36 && n % 10 === 9;
+  if (horde) set = ["swarm"];
   const g = new Set(set);
+  if (horde) g.add("horde");
   if (g.has("final")) for (const k of ["giant", "column", "bombs"]) g.add(k);
   if (g.has("giant")) g.add("boss");     // 勝ち負けの決まりは指揮機と同じ
   if (g.has("split")) g.add("bombs");
@@ -1179,7 +1183,7 @@ function updateWingmen(dt) {
         // 曳光弾の一連射
         w.shots--; w.cool = 0.35;
         for (let k = 0; k < 14; k++) fx.emit(tmpV2.copy(w.pos).lerp(t.pos, k / 14), ZERO, COL.gold, 5, 0.18 + k * 0.012, { drag: 0 });
-        audio.gun();
+        audio.gun(1, "f" + w.tier);
         t.hp -= w.dmg * dmgMul() * (t.lit > 0.5 ? 1.5 : 1);
         t.flash = 0.6;
         sparks(t.pos, 16);
@@ -1758,10 +1762,16 @@ const audio = (() => {
         cat: [260, 0.05, 6, "square", 0.05],
         jet: [520, 0.03, 8, "square", 0.03],          // 高く、とても速い
         jet2: [130, 0.11, 4, "sawtooth", 0.1],        // 機関砲。低くて間のあいた重い音
+        f0: [290, 0.07, 5, "triangle", 0.06],        // 零戦: 軽くて乾いた音
+        f1: [200, 0.075, 5, "sawtooth", 0.08],        // 紫電改: 20mm 4門の太い音
+        f2: [250, 0.05, 6, "square", 0.05],           // 疾風: 速めで歯切れよく
+        f3: [150, 0.1, 4, "sawtooth", 0.11],          // 震電: 30mm の重い連打
+        f4: [170, 0.085, 5, "sawtooth", 0.09],        // 橘花
+        f5: [120, 0.14, 3, "sawtooth", 0.14],         // 秋水: 30mm をゆっくり3発
         friend: [240, 0.055, 5, "square", 0.05]
       }[kind] || [240, 0.055, 5, "square", 0.05];
       for (let i = 0; i < n; i++) tone(f, f * 0.5, len, 0.07 * v, type, i * gap);
-      if (kind === "jet2") hiss(0.4, 0.14 * v, 900, 120);
+      if (kind === "jet2" || kind === "f3" || kind === "f5") hiss(0.4, 0.14 * v, 900, 120);
     },
     flyby() { hiss(1.1, 0.16, 300, 2400, "bandpass"); tone(150, 95, 1.0, 0.05, "sawtooth"); },
     thunder() { hiss(1.6, 0.35, 900, 50); tone(70, 30, 1.2, 0.2, "sawtooth", 0.05); },
@@ -1891,10 +1901,11 @@ function buildQueue(d) {
       if (ch === "X") q.push({ at: 1.5 + k * 10, x: (c - 2) * 96, y: 300 - r * 50, z: -780, vx: 0, ...small, size: 0.55, speed: 0.75 });
     })));
   } else if (g.has("swarm")) {
-    const groups = Math.max(3, Math.round(d.count * 0.6));
+    const horde = g.has("horde");
+    const groups = horde ? 14 : Math.max(3, Math.round(d.count * 0.6)), per = horde ? 6 : 5;
     for (let k = 0; k < groups; k++) {
-      const x = rand(-170, 170), y = rand(130, 230), at = 1.5 + k * (span / groups);
-      for (let i = 0; i < 5; i++) q.push({ at: at + i * 0.18, x: x + rand(-70, 70), y: y + rand(-40, 40), z: -760 - i * 30, ...small });
+      const x = rand(-170, 170), y = rand(130, 230), at = 1.5 + k * ((horde ? 30 : span) / groups);
+      for (let i = 0; i < per; i++) q.push({ at: at + i * 0.18, x: x + rand(-70, 70), y: y + rand(-40, 40), z: -760 - i * 30, ...small });
     }
   } else if (g.has("mirror")) {
     // 頭の上を越えて、背中から遠ざかっていく。逃げ切られる前に落とす
@@ -1910,7 +1921,7 @@ function buildQueue(d) {
     }
   }
   const known = Object.keys(ESC).filter((k) => FIRST.indexOf(k) + 1 < d.n);
-  if (known.length && !g.has("letters") && !g.has("mirror")) for (let i = 0; i < Math.round(d.count * 0.3); i++) q.push({ at: 3 + rand(0, span), ...ESC[pick(known)] });
+  if (known.length && !g.has("letters") && !g.has("mirror") && !g.has("horde")) for (let i = 0; i < Math.round(d.count * 0.3); i++) q.push({ at: 3 + rand(0, span), ...ESC[pick(known)] });
   if (g.has("rush") && !g.has("swarm") && !g.has("letters")) {
     const groups = Math.min(7, 4 + Math.floor(d.n / 12));
     for (let k = 0; k < groups; k++) {
@@ -2557,13 +2568,13 @@ function update(dt, real) {
         if (p.dove && p.pos.z > -150 && p.vel.y < 0) p.vel.y = 70;
         if (p.strafeN > 0 && (p.strafeT -= dt) <= 0) { p.strafeN--; p.strafeT = 0.45; strafe(p); }
       }
-      if (!p.gone && (p.away ? p.pos.z < -980 : p.pos.z > -50)) {   // 頭上を越えられた／逃げ切られた
+      if (!p.gone && (p.away ? p.pos.z < -1500 : p.pos.z > -50)) {   // 頭上を越えられた／逃げ切られた
         if (p.away) p.gone = true; else p.dead = true;   // 遠ざかる機体は、見えなくなるまで飛ばしておく
         p.bar?.remove(); p.bar = null;
         if (p.boss) st.bossEscaped = true;
         else if (!p.paper) damageCity(p.small ? 2 : p.fighter ? 2 : 6);
       }
-      if (p.gone) { p.mesh.scale.setScalar(p.size * clamp(1 - (-p.pos.z - 1500) / 700, 0.001, 1)); if (p.pos.z < -2200) p.dead = true; }
+      if (p.gone) { p.mesh.scale.setScalar(p.size * clamp(1 - (-p.pos.z - 1500) / 350, 0.001, 1)); if (p.pos.z < -1850) p.dead = true; }
     }
     p.mesh.position.copy(p.pos);
     p.mesh.rotation.y = p.away ? Math.PI : Math.atan2(p.vel.x, p.vel.z) * 0.6 + (p.falling ? 0 : p.yaw);
