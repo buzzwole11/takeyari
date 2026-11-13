@@ -228,6 +228,25 @@
   #gacha-btn { margin-top: 14px; }
   #gacha-btn:disabled { opacity: 0.4; }
   .odds { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  #rank-open { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 14px; margin: 0; font-size: 17px; padding: 9px 16px; color: var(--gold); border-color: rgba(242, 196, 109, 0.5); letter-spacing: 0.2em; }
+  #rank { background: rgba(4, 9, 16, 0.9); justify-content: flex-start; overflow: hidden; }
+  .rank-title { font-size: 28px; letter-spacing: 0.4em; color: var(--gold); }
+  .rank-nm { display: flex; gap: 6px; width: min(340px, 100%); margin-top: 14px; }
+  .rank-nm input { flex: 1; min-width: 0; font: inherit; font-size: 17px; padding: 9px 12px; color: var(--paper); background: rgba(10, 22, 30, 0.9); border: 1px solid var(--line); border-radius: 8px; -webkit-user-select: text; user-select: text; }
+  .rank-nm .small { margin: 0; color: var(--paper); }
+  #rank-me { width: min(340px, 100%); margin: 10px 0 6px; font-size: 14px; color: var(--cyan); min-height: 20px; }
+  #rank-list { width: min(340px, 100%); flex: 1 1 0; min-height: 0; overflow-y: auto; border-top: 1px solid var(--line); }
+  #rank-list .msg { padding: 30px 0; color: var(--muted); }
+  .rk { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-bottom: 1px solid var(--line); font-size: 16px; text-align: left; }
+  .rk b { width: 30px; text-align: right; color: var(--muted); font-weight: 400; }
+  .rk span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rk em { font-style: normal; color: var(--gold); }
+  .rk.t3 b { color: var(--gold); font-weight: 800; }
+  .rk.me { background: rgba(20, 60, 64, 0.7); }
+  .recall { position: fixed; z-index: 6; transform: translate(-50%, -100%); padding: 7px 11px; font-size: 14px; font-weight: 800; border: 1px solid var(--line); border-radius: 999px; background: rgba(8, 18, 26, 0.85); color: var(--muted); white-space: nowrap; }
+  .recall.can { color: #1b1407; background: var(--gold); border-color: var(--gold); box-shadow: 0 0 14px rgba(242, 196, 109, 0.7); animation: recallpulse 0.9s ease-in-out infinite; }
+  @keyframes recallpulse { 50% { transform: translate(-50%, -100%) scale(1.1); } }
+  .recall.can .coin { box-shadow: none; }
 </style>
 </head>
 <body data-mode="menu">
@@ -284,6 +303,7 @@
     <button class="opt" data-opt="sound" aria-label="音"><svg><use href="#i-sound"/></svg></button>
     <button class="opt" data-opt="vibe" aria-label="振動"><svg><use href="#i-vibe"/></svg></button>
   </div>
+  <button class="small mincho" id="rank-open" hidden>番付</button>
   <h1 class="mincho">竹槍<span>防空</span></h1>
   <div id="road"></div>
   <button id="start" class="primary" data-action="start">出撃</button>
@@ -338,6 +358,18 @@
   <div class="odds">並 60%　上 30%　極 10%　／　かぶったら4割戻る</div>
 </section>
 
+<!-- 番付（ネットのランキング） -->
+<section id="rank" class="screen" hidden>
+  <div class="look-head">
+    <button class="small" data-action="lookback">← もどる</button>
+    <span class="rank-title mincho">番付</span>
+  </div>
+  <div class="rank-nm"><input id="rank-name" maxlength="8" placeholder="名前（8文字まで）" autocomplete="off" enterkeyhint="done"><button class="small" id="rank-set">決定</button></div>
+  <div id="rank-me"></div>
+  <div id="rank-list"></div>
+  <div class="odds">名前・越えた面の数・端末ごとの乱数IDを送ります</div>
+</section>
+
 <!-- 毎日の配給と、留守のあいだの見張りの報酬 -->
 <section id="gift" class="screen" hidden>
   <div class="gift-card">
@@ -384,7 +416,7 @@ const UPS = [
 const save = {
   coins: 0, stage: 1, best: 1, up: {}, fails: {}, stars: {},
   opt: { sound: true, vibe: true }, tut: 0, road: 0, skin: 0, cskin: 0,
-  crew: {}, team: [], own: { spear: [0], crew: [0] },
+  crew: {}, team: [], own: { spear: [0], crew: [0] }, name: "", uid: "",
   last: 0, day: "", streak: 0, gift2: "", free: { day: "", n: 0 }
 };
 for (const u of UPS) save.up[u.id] = 0;
@@ -408,10 +440,36 @@ try {
   if (s.own && typeof s.own === "object") { save.own.spear = [...new Set([0, ...ints(s.own.spear, 10)])]; save.own.crew = [...new Set([0, ...ints(s.own.crew, 8)])]; }
   else if (save.skin > 0) { save.skin = save.skin >= 3 ? 7 : save.skin; save.own.spear = [0, 1, 2, 7].filter((i) => i <= save.skin); }
   if (Number.isFinite(s.cskin)) save.cskin = Math.floor(s.cskin);
+  if (typeof s.name === "string") save.name = [...s.name].slice(0, 8).join("");
+  if (typeof s.uid === "string" && /^[a-f0-9]{32}$/.test(s.uid)) save.uid = s.uid;
   if (!save.own.spear.includes(save.skin)) save.skin = 0;
   if (!save.own.crew.includes(save.cskin)) save.cskin = 0;
 } catch { /* 壊れていても遊べる */ }
 const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch {} };
+// 番付（ネットのランキング）。預けるのは名前・越えた面の数・端末ごとの乱数IDだけ。つながらなくても遊べる
+const RANK_URL = "";   // 番付サーバーの場所。空なら番付の入口を出さない
+const rankOn = () => !!RANK_URL && (!DEBUG || location.search.includes("rank"));   // 検証ボットの成績は送らない
+if (!save.uid) save.uid = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
+const rankPost = (path, body) => fetch(RANK_URL + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
+function rankSend() {
+  if (!rankOn() || !save.name || save.best < 2) return Promise.resolve();
+  return rankPost("/score", { id: save.uid, name: save.name, stage: save.best - 1 }).catch(() => {});
+}
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
+async function rankLoad() {
+  const list = $("rank-list"), mine = $("rank-me");
+  $("rank-name").value = save.name;
+  list.innerHTML = '<div class="msg">読み込み中</div>';
+  mine.textContent = "";
+  try {
+    await rankSend();
+    const d = await rankPost("/top", { id: save.uid });
+    list.innerHTML = d.top.length
+      ? d.top.map((r, i) => `<div class="rk ${r.me ? "me" : ""} ${i < 3 ? "t3" : ""}"><b class="mono">${i + 1}</b><span>${esc(r.name)}</span><em class="mono">第${r.stage}面</em></div>`).join("")
+      : '<div class="msg">まだ誰も載っていません</div>';
+    mine.textContent = d.me?.rank ? `あなたは ${d.total}人中 ${d.me.rank}位（第${d.me.stage}面）` : save.name ? (save.best < 2 ? "1面を越えると番付に載ります" : "") : "名前を決めると番付に載ります";
+  } catch { list.innerHTML = '<div class="msg">つながりません。あとでもう一度</div>'; }
+}
 const L = (id) => save.up[id];
 
 // 強化の効き目（1段ごとの差は小さく、段数を多く）
@@ -471,7 +529,7 @@ function stageDef(n) {
   const fails = save.fails[n] || 0;
   const wall = n > 10 && n % 4 === 3;
   const lv = Math.max(0, n - 1);
-  let count = n <= 3 ? 3 + n : 5 + Math.min(9, lv * 0.4) + Math.min(8, Math.max(0, lv - 40) * 0.1);   // 40面より先も、じわじわ増える
+  let count = n <= 3 ? 3 + n : 5 + Math.min(9, lv * 0.4);
   if (g.has("fullmoon") || g.has("dawn") || g.has("chonai")) count *= 1.5;
   if (g.has("armor")) count *= 0.6;
   if (g.has("giant")) count *= 0.5;
@@ -480,15 +538,15 @@ function stageDef(n) {
     n, g,
     names: set.map((k) => GIMMICKS[k]).join("×"),
     count: Math.round(count),
-    speed: (64 + Math.min(60, lv * 2.4) + Math.min(30, Math.max(0, lv - 40) * 0.4)) * (wall ? 1.1 : 1) * (g.has("lowfly") ? 1.25 : 1),
-    hpMul: (1 + lv * 0.05) * Math.pow(1.012, Math.max(0, lv - 30)) * (1 - Math.min(0.3, fails * 0.1)),   // 30面より先は掛け算で硬くなる
+    speed: (64 + Math.min(60, lv * 2.4) + Math.min(70, Math.max(0, lv - 30) * 0.7)) * (wall ? 1.1 : 1) * (g.has("lowfly") ? 1.25 : 1),
+    hpMul: (1 + Math.min(lv, 50) * 0.05 + Math.max(0, lv - 50) * 0.02) * (1 - Math.min(0.3, fails * 0.1)),   // 硬さの伸びは50面から緩める（1面が長くなりすぎるため）
     armored: g.has("armor") ? 1 : n >= 8 ? Math.min(0.35, (n - 7) * 0.04) : 0,
     bombTarget: Math.max(3, 6 + Math.min(6, Math.floor(lv / 6)) - fails),
     wind: g.has("wind") ? (Math.random() < 0.5 ? -1 : 1) * rand(70, 110) : 0,
     grav: g.has("rain") ? 1.5 : 1,          // 雨の日は竹槍が重い
     spearSpeed: g.has("rain") ? 0.92 : 1,
     coinMul: 1 + lv * 0.03,                 // そのぶん稼ぎも面に応じて増える
-    dmg: 1 + lv * 0.06                      // 面が進むほど、取りこぼしが痛くなる
+    dmg: 1 + lv * 0.06 + Math.max(0, lv - 40) * 0.04                      // 面が進むほど、取りこぼしが痛くなる
   };
 }
 
@@ -1096,6 +1154,7 @@ function updateWingmen(dt) {
     if (!w.mesh.visible) {
       if ((w.wait -= dt) > 0) continue;
       if (!planes.some((p) => alive(p) && !p.paper && !p.away)) { w.wait = 0.8; continue; }
+      if (allies.some((a) => a.kind === "pilot" && a.out)) { w.wait = 1; continue; }   // 飛行兵が退避しているあいだは呼べない
       const side = Math.random() < 0.5 ? -1 : 1;
       w.pos.set(side * 240, 330, 90);
       w.vel.set(-side * 120, -60, -w.speed);
@@ -1286,7 +1345,7 @@ const allies = [];
 const TEAM_SPOTS = [{ x: -7.5, y: -8.5, z: -44 }, { x: 8, y: -9, z: -48 }, { x: -14, y: -10, z: -64 }, { x: 15, y: -10.5, z: -68 }, { x: 0.5, y: -12.5, z: -84 }];
 const FAR_SPOTS = [{ x: -30, y: -15, z: -96 }, { x: 33, y: -16, z: -104 }, { x: -8, y: -17, z: -122 }, { x: 14, y: -18, z: -134 }];
 function rebuildAllies(trial = null) {
-  for (const a of allies) scene.remove(a.root);
+  for (const a of allies) { scene.remove(a.root); a.btn?.remove(); }
   allies.length = 0;
   const add = (kind, lv, spot) => {
     const root = new THREE.Group();
@@ -1313,7 +1372,8 @@ function rebuildAllies(trial = null) {
       pilot: { interval: 3, dmg: 0 },
       chonai: { interval: 5.5, dmg: 1 }
     }[kind];
-    allies.push({ kind, lv, root, person, timer: rand(0.5, 2), swing: 0, ...spec });
+    const maxHp = 3 + Math.floor(lv / 5);   // 何回狙われたら退避するか
+    allies.push({ kind, lv, root, person, timer: rand(0.5, 2), swing: 0, hp: maxHp, maxHp, out: false, duck: 0, btn: null, ...spec });
   };
   // 仕掛けの面では、まだ雇っていなくても助っ人として来てくれる
   const team = save.team.filter((id) => crewLv(id) > 0).slice(0, teamSlots()).map((id) => ({ id, lv: crewLv(id) }));
@@ -1326,8 +1386,43 @@ function rebuildAllies(trial = null) {
   const tier = pl ? friendTier(pl.lv) : 0;
   rebuildWingmen((pl ? friendCount(pl.lv) : 0) + extra, pl ? Math.max(2.5, 6 * Math.pow(0.96, pl.lv - 1)) : 3.2, pl ? 4 + 0.3 * (pl.lv - 1) + tier * 1.5 : 4, tier);
 }
+// 仲間が屋根の陰へ退避する。銭を払えば、その場で呼び戻せる
+const recallCost = (a) => Math.round((15 + a.lv * 4) * (1 + (def?.n || 1) * 0.03));
+function retreat(a) {
+  a.out = true;
+  a.swing = 0;
+  smoke.emit(a.root.position, V(0, 14, 0), COL.smoke, 16, 1.2, { drag: 0.5, grow: 16, alpha: 0.5 });
+  const b = document.createElement("button");
+  b.className = "recall mono";
+  b.dataset.recall = String(allies.indexOf(a));
+  b.innerHTML = `呼ぶ ${COIN}${recallCost(a)}`;
+  document.body.appendChild(b);
+  a.btn = b;
+  haptic(25);
+}
+function recall(a) {
+  const cost = recallCost(a);
+  if (!a.out || save.coins + st.gain < cost) return false;
+  const fromWallet = Math.min(save.coins, cost);
+  save.coins -= fromWallet;
+  st.gain -= cost - fromWallet;   // 足りないぶんは、この面で稼いだ銭から
+  persist();
+  a.out = false;
+  a.hp = a.maxHp;
+  a.timer = 0.6;
+  a.btn?.remove();
+  a.btn = null;
+  shockRing(a.root.position.clone().add(V(0, 6, 0)), 40, 0x9fe8e0, 0.4);
+  return true;
+}
 function updateAllies(dt) {
   for (const a of allies) {
+    // 伏せる・退避する・戻ってくる動き
+    a.duck = Math.max(0, (a.duck || 0) - dt * 1.6);
+    const low = a.out ? 1 : Math.min(1, a.duck * 2);
+    a.person.position.y += ((a.out ? -9 : -1.6 * low) - a.person.position.y) * Math.min(1, dt * 8);
+    a.person.rotation.x = -0.5 * low;
+    if (a.out) continue;
     if (a.regen && !st.over) st.hp = Math.min(cityMax(), st.hp + a.regen * dt);
     a.timer -= dt;
     if (a.timer > 0) continue;
@@ -1684,7 +1779,7 @@ const audio = (() => {
 })();
 
 // ---------------- 状態 ----------------
-let mode = "menu";
+let mode = "menu", sub = "look";
 let def = null;
 const st = {};
 const planes = [], bombs = [], spears = [], floats = [];
@@ -1701,7 +1796,9 @@ function setMode(m) {
   mode = m;
   document.body.dataset.mode = m;
   for (const id of ["menu", "pause", "result"]) $(id).hidden = id !== m;
-  $("look").hidden = m !== "upgrade";   // 見た目の画面（戻るボタンでタイトルへ）
+  $("look").hidden = m !== "upgrade" || sub !== "look";   // 見た目の画面（戻るボタンでタイトルへ）
+  $("rank").hidden = m !== "upgrade" || sub !== "rank";   // 番付の画面
+  $("rank-open").hidden = !rankOn();
   $("hud").hidden = m === "menu" || m === "result" || m === "upgrade";
   if (m !== "play") { $("hint").hidden = true; for (const p of planes) if (p.bar) p.bar.style.display = "none"; }
   if (m !== "play") { input.charging = false; $("reticle").style.opacity = 0; $("thumb").style.opacity = 0; }
@@ -1751,7 +1848,7 @@ const LETTERS = [
 ];
 function buildQueue(d) {
   const q = [], g = d.g;
-  const span = 4 + d.count * 1.9;
+  const span = Math.min(34, 4 + d.count * 1.9);   // 出現は長くても34秒のうちに終える
   const small = { size: 0.5, hp: 0.5, speed: 1.5, drops: 0, small: true };
   if (g.has("column")) {
     const groups = Math.max(2, Math.round(d.count / 4));
@@ -1791,7 +1888,7 @@ function buildQueue(d) {
   const known = Object.keys(ESC).filter((k) => FIRST.indexOf(k) + 1 < d.n);
   if (known.length && !g.has("letters") && !g.has("mirror")) for (let i = 0; i < Math.round(d.count * 0.3); i++) q.push({ at: 3 + rand(0, span), ...ESC[pick(known)] });
   if (g.has("rush") && !g.has("swarm") && !g.has("letters")) {
-    const groups = 4 + Math.floor(d.n / 12);
+    const groups = Math.min(7, 4 + Math.floor(d.n / 12));
     for (let k = 0; k < groups; k++) {
       const x = rand(-170, 170), y = rand(130, 230), at = 3 + k * (span / groups);
       for (let i = 0; i < 6; i++) q.push({ at: at + i * 0.16, x: x + rand(-80, 80), y: y + rand(-45, 45), z: -760 - i * 30, ...small });
@@ -2174,7 +2271,7 @@ function killPlane(p, spear, opt = {}) {
   shake = Math.max(shake, p.boss ? 14 : 6);
   hitstop = Math.max(hitstop, p.boss ? 0.2 : opt.skewer ? 0.05 : 0.08);
   fovKick = Math.max(fovKick, p.boss ? 1.8 : 0.8);
-  floatAt(p.pos.clone().add(V(0, 26 * p.size, 0)), `${COIN}+${gain}`, "#f2c46d", p.boss ? 40 : sk > 1 ? 32 : 26);
+  floatAt(p.pos.clone().add(V(0, 26 * p.size + (opt.idx || 0) * 34, 0)), `${COIN}+${gain}`, "#f2c46d", p.boss ? 40 : sk > 1 ? 32 : 26);
   coinFly(p.pos, Math.ceil(gain / 2));
   if (st.combo >= 2) { const c = $("combo"); c.textContent = `${st.combo}連撃 ×${mult.toFixed(1)}`; c.style.opacity = 1; c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump"); }
   if (p.boss) {
@@ -2247,8 +2344,34 @@ function finale(s) {
     killPlane(p, s, { skewer: n, idx: i });
   }));
 }
-// 戦闘機の機銃掃射。赤い曳光弾が町へ走り、耐久を少し削る
+// 戦闘機の機銃掃射。赤い曳光弾が町へ走り、耐久を少し削る。
+// 30面からは屋根も狙う: 仲間のそばに着弾すると仲間は身を伏せ、続けて狙われると屋根の陰へ退避する（人が撃たれる絵にはしない）
+const RAID_FROM = 30;
 function strafe(p) {
+  if (def.n >= RAID_FROM) {
+    const up = allies.filter((a) => !a.out && a.kind !== "chonai");
+    const r = Math.random();
+    if (up.length && r < 0.55) {
+      const a = pick(up);
+      const g = a.root.position.clone().add(V(rand(-5, 5), 0.5, rand(-3, 3)));
+      for (let k = 0; k < 12; k++) fx.emit(tmpV.copy(p.pos).lerp(g, k / 12), ZERO, COL.red, 5, 0.14 + k * 0.012, { drag: 0 });
+      sparks(g, 14);
+      burstShards(g, 4, 60, 0.5);
+      audio.gun(0.8);
+      a.duck = 1;
+      if (--a.hp <= 0) retreat(a);
+      return;
+    }
+    if (r > 0.8) {
+      // こちらの屋根をかすめる
+      const g = V(rand(-10, 10), -8, -16);
+      for (let k = 0; k < 12; k++) fx.emit(tmpV.copy(p.pos).lerp(g, k / 12), ZERO, COL.red, 6, 0.14 + k * 0.012, { drag: 0 });
+      sparks(g, 20);
+      audio.gun(1);
+      damageCity(2);
+      return;
+    }
+  }
   const g = tmpV2.set(p.pos.x + rand(-40, 40), GROUND_Y + 3, p.pos.z + 190).clone();
   for (let k = 0; k < 12; k++) fx.emit(tmpV.copy(p.pos).lerp(g, k / 12), ZERO, COL.red, 5, 0.14 + k * 0.012, { drag: 0 });
   sparks(g, 10);
@@ -2384,7 +2507,12 @@ function update(dt, real) {
         }
       }
       // 戦闘機は近づくと町を機銃掃射する
-      if (p.fighter && !p.away && p.app <= 0 && p.strafeN > 0 && p.pos.z > -440 && (p.strafeT -= dt) <= 0) { p.strafeN--; p.strafeT = 0.45; strafe(p); }
+      if (p.fighter && !p.away && p.app <= 0 && p.pos.z > -440) {
+        // 30面からは高度を下げて屋根すれすれまで突っ込み、通りすぎたら上昇する
+        if (def.n >= RAID_FROM && !p.dove) { p.dove = true; p.vel.y = (-(p.pos.y - 60) * p.vel.z) / Math.max(80, -p.pos.z - 150); }
+        if (p.dove && p.pos.z > -150 && p.vel.y < 0) p.vel.y = 70;
+        if (p.strafeN > 0 && (p.strafeT -= dt) <= 0) { p.strafeN--; p.strafeT = 0.45; strafe(p); }
+      }
       if (!p.gone && (p.away ? p.pos.z < -980 : p.pos.z > -50)) {   // 頭上を越えられた／逃げ切られた
         if (p.away) p.gone = true; else p.dead = true;   // 遠ざかる機体は、見えなくなるまで飛ばしておく
         p.bar?.remove(); p.bar = null;
@@ -2655,6 +2783,7 @@ function endStage(win) {
       save.stage = def.n + 1;
       save.best = Math.max(save.best, save.stage);
       road = grantRoad(def.n);
+      rankSend();
       save.stars[def.n] = Math.max(save.stars[def.n] || 0, stars);
       delete save.fails[def.n];
       audio.clear();
@@ -2920,7 +3049,13 @@ document.addEventListener("click", (e) => {
   if (!b || b.disabled) return;
   audio.unlock();
   if (b.dataset.up) { buyUpgrade(b.dataset.up, b); return; }
-  if (b.dataset.tab === "look") { pulled = null; setMode("upgrade"); audio.ui(); return; }
+  if (b.dataset.tab === "look") { pulled = null; sub = "look"; setMode("upgrade"); audio.ui(); return; }
+  if (b.id === "rank-open") { sub = "rank"; setMode("upgrade"); rankLoad(); audio.ui(); return; }
+  if (b.id === "rank-set") {
+    save.name = [...$("rank-name").value.normalize("NFKC").replace(/\s+/g, " ").trim()].slice(0, 8).join("");
+    persist(); $("rank-name").blur(); audio.buy(); rankLoad();
+    return;
+  }
   if (b.dataset.tab) { tab = b.dataset.tab; say = ""; refreshShops(); audio.ui(); return; }
   if (b.dataset.look) { lookKind = b.dataset.look; pulled = null; refreshShops(); audio.ui(); return; }
   if (b.id === "gacha-btn") {
@@ -2934,6 +3069,11 @@ document.addEventListener("click", (e) => {
     if (ok) { audio.buy(); haptic(10); } else audio.ui();
     rebuildAllies();
     refreshShops();
+    return;
+  }
+  if (b.dataset.recall) {
+    const a = allies[Number(b.dataset.recall)];
+    if (a && recall(a)) { audio.buy(); haptic(15); } else audio.ui();
     return;
   }
   if (b.dataset.opt) {
@@ -3067,6 +3207,13 @@ function frame(now) {
     if (f.life <= 0) { f.el.remove(); floats.splice(i, 1); }
   }
   // 体力バー
+  // 退避した仲間の「呼ぶ」ボタンを、その屋根の上に出す
+  for (const a of allies) {
+    if (!a.btn) continue;
+    const s = mode === "play" ? screenOf(tmpV2.copy(a.root.position).add(tmpV.set(0, 9, 0))) : null;
+    a.btn.style.display = s ? "" : "none";
+    if (s) { a.btn.style.left = s.x + "px"; a.btn.style.top = s.y - (allies.indexOf(a) >= 2 ? 42 : 0) + "px"; a.btn.classList.toggle("can", save.coins + st.gain >= recallCost(a)); }
+  }
   const bossP = mode === "play" ? planes.find((p) => p.boss && !p.falling) : null;
   $("boss-bar").hidden = !bossP;
   if (bossP) $("boss-fill").style.width = `${clamp(bossP.hp / bossP.maxHp, 0, 1) * 100}%`;
@@ -3112,6 +3259,7 @@ if (DEBUG) {
     },
     step: (sec) => { for (let t = 0; t < sec; t += 1 / 60) update(1 / 60, 1 / 60); },
     storm: () => { energy = 100; beginStorm(); },
+    raid: () => { const a = allies.find((x) => !x.out); if (a) retreat(a); return allies.map((x) => x.kind + (x.out ? ":退避" : "")); },
     // 強化を安い順に買う（ボットの成長を人に近づけるため）
     buyCheapest: () => {
       // 雇える仲間がいれば先に雇う（人の遊び方に近づけ、仲間の動きも検証に乗せる）
