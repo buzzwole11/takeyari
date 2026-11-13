@@ -449,7 +449,7 @@ const ESC = {
 const FAR = 900;   // 敵はこの距離ぶん奥から、速度を落としながら入ってくる
 const FIRST = Object.keys(GIMMICKS);
 // 31面からは「編隊の組み方」と「天候・武器」をひとつずつ掛け合わせる
-const FORMS = ["column", "vee", "swarm", "mirror", "letters", "zigzag", "basic"];
+const FORMS = ["column", "vee", "swarm", "mirror", "letters", "zigzag", "basic", "swarm"];
 const MODS = ["clouds", "wind", "rain", "dark", "fullmoon", "dawn", "lowfly", "triple", "fire", "pole", "daikon", "fireworks", "decoy", "armor", "roofmove", "gold"];
 
 function stageDef(n) {
@@ -467,10 +467,11 @@ function stageDef(n) {
   if (g.has("final")) for (const k of ["giant", "column", "bombs"]) g.add(k);
   if (g.has("giant")) g.add("boss");     // 勝ち負けの決まりは指揮機と同じ
   if (g.has("split")) g.add("bombs");
+  if (n > 19 && n % 6 === 1) g.add("rush");   // 6面ごとに、小型機の大群がなだれ込む
   const fails = save.fails[n] || 0;
   const wall = n > 10 && n % 4 === 3;
   const lv = Math.max(0, n - 1);
-  let count = n <= 3 ? 3 + n : 5 + Math.min(9, lv * 0.4);
+  let count = n <= 3 ? 3 + n : 5 + Math.min(9, lv * 0.4) + Math.min(8, Math.max(0, lv - 40) * 0.1);   // 40面より先も、じわじわ増える
   if (g.has("fullmoon") || g.has("dawn") || g.has("chonai")) count *= 1.5;
   if (g.has("armor")) count *= 0.6;
   if (g.has("giant")) count *= 0.5;
@@ -479,14 +480,14 @@ function stageDef(n) {
     n, g,
     names: set.map((k) => GIMMICKS[k]).join("×"),
     count: Math.round(count),
-    speed: (64 + Math.min(60, lv * 2.4)) * (wall ? 1.1 : 1) * (g.has("lowfly") ? 1.25 : 1),
-    hpMul: (1 + lv * 0.05) * (1 - Math.min(0.3, fails * 0.1)),
+    speed: (64 + Math.min(60, lv * 2.4) + Math.min(30, Math.max(0, lv - 40) * 0.4)) * (wall ? 1.1 : 1) * (g.has("lowfly") ? 1.25 : 1),
+    hpMul: (1 + lv * 0.05) * Math.pow(1.012, Math.max(0, lv - 30)) * (1 - Math.min(0.3, fails * 0.1)),   // 30面より先は掛け算で硬くなる
     armored: g.has("armor") ? 1 : n >= 8 ? Math.min(0.35, (n - 7) * 0.04) : 0,
     bombTarget: Math.max(3, 6 + Math.min(6, Math.floor(lv / 6)) - fails),
     wind: g.has("wind") ? (Math.random() < 0.5 ? -1 : 1) * rand(70, 110) : 0,
     grav: g.has("rain") ? 1.5 : 1,          // 雨の日は竹槍が重い
     spearSpeed: g.has("rain") ? 0.92 : 1,
-    coinMul: 1,
+    coinMul: 1 + lv * 0.03,                 // そのぶん稼ぎも面に応じて増える
     dmg: 1 + lv * 0.06                      // 面が進むほど、取りこぼしが痛くなる
   };
 }
@@ -602,10 +603,10 @@ const SKY = {
 };
 // 面ごとの空気。空・灯り・霞・雲・雨をまとめて切り替える
 const ENV = {
-  night: { hemi: 1.0, moon: 1.7, fog: 0x1b2738, stars: 0.8, win: 0.85, beam: 1, lit: 0.12 },
-  moon: { hemi: 1.5, moon: 2.5, fog: 0x25364e, stars: 0.55, win: 0.85, beam: 0.8, lit: 0.1 },
+  night: { hemi: 1.0, moon: 1.7, fog: 0x1b2738, stars: 0.8, win: 0.85, beam: 1, lit: 0.32 },
+  moon: { hemi: 1.5, moon: 2.5, fog: 0x25364e, stars: 0.55, win: 0.85, beam: 0.8, lit: 0.26 },
   dawn: { hemi: 1.8, moon: 1.0, fog: 0x625a68, stars: 0.05, win: 0.25, beam: 0.25, lit: 0 },
-  storm: { hemi: 0.8, moon: 0.5, fog: 0x161d27, stars: 0, win: 0.85, beam: 1.3, lit: 0.2 },
+  storm: { hemi: 0.8, moon: 0.5, fog: 0x161d27, stars: 0, win: 0.85, beam: 1.3, lit: 0.38 },
   dark: { hemi: 0.3, moon: 0.45, fog: 0x0a0e15, stars: 0.9, win: 0, beam: 2.4, lit: 0.6 }
 };
 let env = ENV.night, bolt = 0;
@@ -867,10 +868,12 @@ const UP = new THREE.Vector3(0, 1, 0);
 function updateSearchlights(dt, now) {
   searchlights.forEach((s, i) => {
     const u = s.userData;
-    const t = mode === "play" ? planes.filter((p) => alive(p) && !p.paper)[i] : null;
+    // 1本目は、溜めているあいだ指の下の敵を照らす。残りは近い敵を順に追う
+    const aimed = i === 0 && mode === "play" && input.charging ? pickTarget(input.ax, input.ay) : null;
+    const t = aimed && !aimed.bomb ? aimed : mode === "play" ? planes.filter((p) => alive(p) && !p.paper)[i] : null;
     if (t) { t.lit = 1; tmpV.copy(t.pos).sub(s.position).normalize(); }
     else tmpV.set(Math.sin(now * 0.25 + u.ph) * 0.45, 1, 0.35 + Math.sin(now * 0.18 + u.ph * 1.7) * 0.25).normalize();
-    u.dir.lerp(tmpV, Math.min(1, dt * (t ? 2.2 : 1))).normalize();
+    u.dir.lerp(tmpV, Math.min(1, dt * (aimed ? 7 : t ? 2.2 : 1))).normalize();
     s.quaternion.setFromUnitVectors(UP, u.dir);
   });
 }
@@ -979,32 +982,44 @@ const BOMBER = (() => {
 
 // 小型機（戦闘機3種と噴進機2種）。形は似せるが、名前や記章は出さない
 function fighterModel(o) {
-  const L = o.len, S = o.span / 2, C = o.col, DKc = 0x15191d, GL = 0x16303f;
-  const prof = o.jet
+  const L = o.len, S = o.span / 2, C = o.col, DKc = 0x15191d, GL = 0x16303f, RED = 0xc8281e;
+  const fat = o.fat || 1;
+  const prof = (o.jet
     ? [[0.7, -L / 2], [1.3, -L * 0.3], [1.9, 0], [1.8, L * 0.28], [1.0, L * 0.44], [0.35, L / 2]]
     : o.radial
       ? [[0, -L / 2], [0.8, -L * 0.42], [1.9, -L * 0.08], [2.4, L * 0.3], [2.35, L * 0.46], [1.3, L / 2]]
-      : [[0, -L / 2], [0.8, -L * 0.42], [1.5, -L * 0.15], [1.75, L * 0.18], [1.45, L * 0.42], [0.55, L / 2]];
+      : [[0, -L / 2], [0.8, -L * 0.42], [1.5, -L * 0.15], [1.75, L * 0.18], [1.45, L * 0.42], [0.55, L / 2]]).map(([r, y]) => [r * fat, y]);
   const fus = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 8);
   fus.rotateX(Math.PI / 2);
   const noseZ = L * (o.jet ? 0.47 : 0.4);
   const parts = [part(fus, C, (x, y, z) => (z > noseZ ? (o.jet ? DKc : o.spin || DKc) : !o.jet && !o.radial && y > 0.9 && z > L * 0.12 ? DKc : 0))];
   const can = new THREE.SphereGeometry(1.35, 7, 5);
-  can.scale(0.8, 0.9, 2.1); can.translate(0, 1.5, L * 0.08);
+  can.scale(0.8, 0.9, 2.1); can.translate(0, 1.5 * fat, L * (o.canard ? 0.16 : 0.08));
   parts.push(part(can, GL));
-  const tail = shapeGeo([[-5.2, -0.8], [-0.8, -2], [0.8, -2], [5.2, -0.8], [5.2, 0.8], [0.8, 1.4], [-0.8, 1.4], [-5.2, 0.8]], 0.35);
-  tail.rotateX(-Math.PI / 2); tail.translate(0, 0.5, -L * 0.42);
-  parts.push(part(tail, C));
-  const fin = shapeGeo([[-L * 0.5, 0], [-L * 0.3, 0], [-L * 0.42, 5.2], [-L * 0.5, 5.4]], 0.4);
-  fin.rotateY(-Math.PI / 2); fin.translate(0.2, 0.8, 0);
-  parts.push(part(fin, C, (x, y) => (y > 4.6 ? o.tipCol || 0 : 0)));
+  if (!o.noTail && !o.canard) {
+    const tail = shapeGeo([[-5.2, -0.8], [-0.8, -2], [0.8, -2], [5.2, -0.8], [5.2, 0.8], [0.8, 1.4], [-0.8, 1.4], [-5.2, 0.8]], 0.35);
+    tail.rotateX(-Math.PI / 2); tail.translate(0, 0.5, -L * 0.42);
+    parts.push(part(tail, C));
+  }
+  if (o.canard) {
+    // 前翼（機首の小さな翼）
+    const fore = shapeGeo([[-4.6, -0.7], [-0.6, -1.6], [0.6, -1.6], [4.6, -0.7], [4.6, 0.7], [0.6, 1.2], [-0.6, 1.2], [-4.6, 0.7]], 0.3);
+    fore.rotateX(-Math.PI / 2); fore.translate(0, 0.2, L * 0.36);
+    parts.push(part(fore, C));
+  }
+  if (!o.canard) {
+    const fin = shapeGeo([[-L * 0.5, 0], [-L * 0.3, 0], [-L * 0.42, 5.2], [-L * 0.5, 5.4]], 0.4);
+    fin.rotateY(-Math.PI / 2); fin.translate(0.2, 0.8, 0);
+    parts.push(part(fin, C, (x, y) => (y > 4.6 ? o.tipCol || 0 : 0)));
+  }
   if (o.scoop) { const s = new THREE.BoxGeometry(1.5, 1.2, 4.5); s.translate(0, -2, -L * 0.08); parts.push(part(s, C)); }
   const body = mergeGeometries(parts);
-  const wz = L * 0.08;   // 翼のつけ根の前後位置
+  const wz = L * (o.canard ? -0.24 : o.noTail ? -0.05 : 0.08);   // 翼のつけ根の前後位置
+  const sw = o.sweep || 0;
   const wing = (sign) => {
     const ws = [];
-    const seg = (x0, x1, c0, c1, rot, y0) => {
-      const g = shapeGeo([[0, -c0 * 0.6], [x1 - x0, -c1 * 0.45], [x1 - x0, c1 * 0.55], [0, c0 * 0.4]].map(([x, y]) => [x * sign, y]), 0.5);
+    const seg = (x0, x1, c0, c1, rot, y0, back = 0) => {
+      const g = shapeGeo([[0, -c0 * 0.6], [x1 - x0, -c1 * 0.45 + back], [x1 - x0, c1 * 0.55 + back], [0, c0 * 0.4]].map(([x, y]) => [x * sign, y]), 0.5);
       g.rotateX(-Math.PI / 2); g.rotateZ(rot * sign); g.translate(x0 * sign, y0, wz);
       ws.push(part(g, C));
     };
@@ -1012,14 +1027,23 @@ function fighterModel(o) {
       // 逆ガル翼: つけ根でいったん下がり、そこから上へ折れる
       seg(1.2, 6, 7, 6.4, -0.42, -0.4);
       seg(5.6, S, 6.4, 3.2, 0.2, -2.4);
-    } else seg(1.2, S, o.chord || 6.5, (o.chord || 6.5) * 0.5, 0.05, -1);
+    } else seg(1.2, S, o.chord || 6.5, (o.chord || 6.5) * 0.5, 0.05, -1, sw);
     if (o.tank) { const t = new THREE.CapsuleGeometry(0.9, 5, 3, 6); t.rotateX(Math.PI / 2); t.translate(S * sign, -0.2, wz); ws.push(part(t, C)); }
     if (o.twin) { const n = new THREE.CylinderGeometry(1.25, 1.1, 11, 8); n.rotateX(Math.PI / 2); n.translate(2.9 * sign, -0.9, wz - 0.5); ws.push(part(n, C, (x, y, z) => (z > wz + 4.6 ? DKc : 0))); }
+    if (o.pods) { const n = new THREE.CylinderGeometry(1.0, 0.9, 9, 8); n.rotateX(Math.PI / 2); n.translate(S * 0.42 * sign, -1.9, wz + 0.5); ws.push(part(n, C, (x, y, z) => (z > wz + 4.4 ? DKc : 0))); }
+    if (o.canard) { const f = shapeGeo([[0, 0], [3.2, 0], [1.2, 3.6], [0.4, 3.6]], 0.3); f.rotateY(-Math.PI / 2); f.translate(S * 0.55 * sign, -0.8, wz - sw * 0.55 - 1); ws.push(part(f, C)); }   // 翼の途中に立つ垂直尾翼
+    if (o.maru) for (const up of [1, -1]) {
+      // 日の丸（翼の上下）
+      const m = new THREE.CircleGeometry(o.span * 0.075, 14);
+      m.rotateX((-Math.PI / 2) * up); m.translate(S * 0.62 * sign, -1 + S * 0.62 * 0.05 + (up > 0 ? 0.56 : -0.06), wz - sw * 0.62);
+      ws.push(part(m, RED));
+    }
     const g = mergeGeometries(ws);
     g.translate((-S / 2) * sign, 0, -wz);
     return g;
   };
-  const prop = o.jet ? null : (() => { const p = new THREE.PlaneGeometry(11, 11); p.translate(0, 0, L / 2 + 0.4); return p; })();
+  // プロペラは機首。推進式（震電）は尾部
+  const prop = o.jet ? null : (() => { const p = new THREE.PlaneGeometry(11, 11); p.translate(0, 0, o.canard ? -L / 2 - 0.4 : L / 2 + 0.4); return p; })();
   return { body, wingL: wing(-1), wingR: wing(1), props: prop, wingAt: [S / 2, 0, wz], tail: -L / 2 };
 }
 const MODELS = {
@@ -1030,57 +1054,87 @@ const MODELS = {
   jet: fighterModel({ len: 24, span: 31, col: 0xcfd6db, jet: true, tank: true }),                                   // 翼端に増槽をつけた噴進機
   jet2: fighterModel({ len: 25, span: 30, col: 0x1f3048, jet: true, twin: true, chord: 7.5 })                       // 翼のつけ根に2発の噴進機
 };
-MODELS.friend = fighterModel({ len: 22, span: 31, col: 0x2f4d36, radial: true, spin: 0x7a3a1c, tipCol: 0xe0b83a });   // 味方の迎撃機（濃緑）
+// 味方の迎撃機。飛行兵を育てると、機種が新しくなっていく
+const FRIENDS = [
+  { nm: "零戦", lv: 1, m: fighterModel({ len: 22, span: 32, col: 0x3d5e44, radial: true, spin: 0x2a2a2a, maru: true }) },
+  { nm: "紫電改", lv: 4, m: fighterModel({ len: 22, span: 31, col: 0x2f4d36, radial: true, chord: 8, fat: 1.12, maru: true }) },
+  { nm: "疾風", lv: 8, m: fighterModel({ len: 24, span: 31, col: 0x66704a, radial: true, chord: 7, maru: true }) },
+  { nm: "震電", lv: 12, m: fighterModel({ len: 23, span: 30, col: 0x34523a, canard: true, sweep: 6, chord: 7.5, maru: true }) },
+  { nm: "橘花", lv: 17, m: fighterModel({ len: 22, span: 29, col: 0x3d5e44, jet: true, pods: true, maru: true }) },
+  { nm: "秋水", lv: 23, m: fighterModel({ len: 16, span: 27, col: 0xe08a2a, jet: true, noTail: true, sweep: 8, chord: 9, fat: 1.35, maru: true }) }
+];
+FRIENDS.forEach((f, i) => { MODELS["f" + i] = f.m; });
+const friendTier = (lv) => FRIENDS.reduce((t, f, i) => (lv >= f.lv ? i : t), 0);
+const friendCount = (lv) => (lv >= 15 ? 3 : lv >= 5 ? 2 : 1);
 
 // ---------------- 友軍機 ----------------
 // 背中のほうから飛んできて、敵を一連射して奥へ抜けていく。竹槍は当たらない
 const wingmen = [];
-function rebuildWingmen(n, interval = 5, dmg = 4) {
+function rebuildWingmen(n, interval = 5, dmg = 4, tier = 0) {
   for (const w of wingmen) scene.remove(w.mesh);
   wingmen.length = 0;
   for (let i = 0; i < n; i++) {
-    const mesh = buildBomber("friend");
+    const mesh = buildBomber("f" + tier);
     mesh.scale.setScalar(2.9);
     mesh.visible = false;
     scene.add(mesh);
-    wingmen.push({ mesh, pos: V(0, 0, 0), vel: V(0, 0, -1), wait: 2.5 + i * 2.2, target: null, shot: false, interval, dmg });
+    wingmen.push({ mesh, pos: V(0, 0, 0), vel: V(0, 0, -1), wait: 2.5 + i * 2.2, target: null, shots: 0, cool: 0, interval, dmg, tier, speed: 430 + tier * 45 });
   }
+}
+// 前方（奥側）にいる敵から、いちばん近いものを選ぶ
+function wingTarget(w) {
+  let best = null, bd = 1e9;
+  for (const p of planes) {
+    if (!alive(p) || p.paper || p.away || p.pos.z > w.pos.z - 60) continue;
+    const d = p.pos.distanceToSquared(w.pos);
+    if (d < bd) { bd = d; best = p; }
+  }
+  return best;
 }
 function updateWingmen(dt) {
   for (const w of wingmen) {
     if (!w.mesh.visible) {
       if ((w.wait -= dt) > 0) continue;
-      const ts = planes.filter((p) => reach(p) && !p.paper && !p.away);
-      if (!ts.length) { w.wait = 0.8; continue; }
-      w.target = pick(ts);
+      if (!planes.some((p) => alive(p) && !p.paper && !p.away)) { w.wait = 0.8; continue; }
       const side = Math.random() < 0.5 ? -1 : 1;
       w.pos.set(side * 240, 330, 90);
-      w.vel.set(-side * 120, -60, -430);
-      w.shot = false;
+      w.vel.set(-side * 120, -60, -w.speed);
+      w.shots = 1 + (w.tier >= 2 ? 1 : 0) + (w.tier >= 4 ? 1 : 0);   // 新しい機種ほど、1回の出撃で多く撃つ
+      w.cool = 0;
+      w.target = wingTarget(w);
       w.mesh.visible = true;
+      w.mesh.scale.setScalar(2.9);
       audio.flyby();
     }
-    const t = w.target && alive(w.target) ? w.target : null;
-    if (t && !w.shot) {
+    w.cool -= dt;
+    // 狙っていた敵が先に落ちたら、すぐ次の敵へ向き直る
+    if (w.shots > 0 && !(w.target && alive(w.target))) w.target = wingTarget(w);
+    const t = w.shots > 0 ? w.target : null;
+    if (t) {
       tmpV.copy(t.pos).add(tmpV2.set(0, 40, 0)).sub(w.pos);
       const d = tmpV.length();
-      w.vel.lerp(tmpV.multiplyScalar(470 / d), Math.min(1, dt * 3.5));
-      if (d < 260) {
+      w.vel.lerp(tmpV.multiplyScalar(w.speed / d), Math.min(1, dt * 3.5));
+      if (d < 300 && w.cool <= 0) {
         // 曳光弾の一連射
-        w.shot = true;
+        w.shots--; w.cool = 0.35;
         for (let k = 0; k < 14; k++) fx.emit(tmpV2.copy(w.pos).lerp(t.pos, k / 14), ZERO, COL.gold, 5, 0.18 + k * 0.012, { drag: 0 });
         audio.gun();
-        t.hp -= w.dmg * dmgMul();
+        t.hp -= w.dmg * dmgMul() * (t.lit > 0.5 ? 1.5 : 1);
         t.flash = 0.6;
         sparks(t.pos, 16);
         if (t.hp <= 0) killPlane(t, null); else ensureBar(t);
+        w.target = null;
       }
-    } else w.vel.lerp(tmpV.set(w.vel.x * 0.5, 150, -470), Math.min(1, dt * 1.2));   // 撃ったら上へ抜ける
+    } else w.vel.lerp(tmpV.set(w.vel.x * 0.5, 150, -w.speed), Math.min(1, dt * 1.2));   // 撃ち終えたら上へ抜ける
     w.pos.addScaledVector(w.vel, dt);
     w.mesh.position.copy(w.pos);
     w.mesh.lookAt(tmpV.copy(w.pos).add(w.vel));
     w.mesh.rotateZ(-w.vel.x * 0.003);
-    if (w.pos.z < -1700 || w.pos.y > 900) { w.mesh.visible = false; w.wait = w.interval; }
+    if (w.tier >= 4) fx.emit(tmpV2.copy(w.pos).addScaledVector(w.vel, -0.07), ZERO, COL.fire, 9, 0.12, { drag: 0 });
+    // 遠ざかるほど小さくして、ふっと消えないようにする
+    const far = Math.max(-w.pos.z, w.pos.y * 2);
+    if (far > 1500) w.mesh.scale.setScalar(2.9 * Math.max(0, 1 - (far - 1500) / 700));
+    if (far > 2200) { w.mesh.visible = false; w.wait = w.interval; }
   }
 }
 function buildBomber(kind = "bomber") {
@@ -1126,6 +1180,12 @@ const CREW = [
   { id: "pilot", ic: "飛", nm: "飛行兵", say: "友軍機を呼ぶ", cost: 1200, at: 28 }
 ];
 const crewLv = (id) => save.crew[id] || 0;
+// 棚の下に出す一言。飛行兵は、いま呼べる機種と次の機種も添える
+function crewSay(c) {
+  if (c.id !== "pilot") return `${c.nm}　${c.say}`;
+  const lv = Math.max(1, crewLv("pilot")), t = friendTier(lv), nx = FRIENDS[t + 1];
+  return `飛行兵　${FRIENDS[t].nm} ${friendCount(lv)}機${nx ? `（Lv${nx.lv}で${nx.nm}）` : ""}`;
+}
 const crewUpCost = (c) => Math.round(c.cost * 0.6 * Math.pow(1.25, crewLv(c.id)));
 const teamSlots = () => (save.best > 25 ? 4 : 3);
 // 人々の見た目（銭で買って、全員まとめて着替える）
@@ -1138,45 +1198,81 @@ const CSKINS = [
 const skinMat = new THREE.MeshLambertMaterial({ color: 0xe2c19c });
 const L_ = (hex, extra = {}) => new THREE.MeshLambertMaterial({ color: hex, ...extra });
 function buildPerson(kind) {
+  // 人は空を向いて立つので、こちらから見えるのは背中。背中で誰だか分かるように作る
   const g = new THREE.Group();
   const sk = CSKINS[save.cskin] || CSKINS[0];
   const base = { grandma: 0x7a5a6e, grandpa: 0x6f6a48, kid: 0x4a6a8a, fire: 0x26365a, monk: 0x8a5a2a, pilot: 0x6a5236, chonai: pick([0x56606a, 0x6a5a48, 0x4f5d4a]) }[kind];
-  const cm = L_(sk.cloth ?? base, { flatShading: true, emissive: sk.glow || 0 });
-  const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); g.add(m); return m; };
-  add(new THREE.CylinderGeometry(1.0, 1.45, 4.2, 8), cm, 0, 2.1, 0);
-  add(new THREE.SphereGeometry(0.95, 10, 8), skinMat, 0, 5.0, 0);
-  const cap = (r, hex, y, frac = 0.55) => add(new THREE.SphereGeometry(r, 10, 8, 0, Math.PI * 2, 0, Math.PI * frac), L_(hex, { flatShading: true }), 0, y, 0);
-  const band = (hex) => { const b = add(new THREE.TorusGeometry(0.93, 0.16, 6, 16), L_(hex), 0, 5.25, 0); b.rotation.x = Math.PI / 2; };
-  // 頭まわり。着替えていれば頭巾や鉢巻きが優先
-  if (sk.head === "hood") cap(1.18, sk.r === 2 ? 0x1a1226 : 0x6b6250, 5.0, 0.66);
-  else if (sk.head === "band") { if (kind !== "monk") cap(1.0, kind === "grandma" || kind === "grandpa" ? 0xcfcfcf : 0x1a1a1a, 5.08); band(0xf4f0e8); }
-  else if (kind === "grandma") { cap(1.0, 0xcfcfcf, 5.08); add(new THREE.SphereGeometry(0.5, 8, 6), L_(0xcfcfcf), 0, 5.75, -0.55); }
-  else if (kind === "grandpa") { band(0xf4f0e8); add(new THREE.CircleGeometry(0.22, 12), new THREE.MeshBasicMaterial({ color: 0xc8322a }), 0, 5.27, 0.95); }
-  else if (kind === "kid") cap(1.02, 0x1a1a1a, 5.1, 0.5);
-  else if (kind === "fire") { cap(1.1, 0x23272e, 5.15, 0.5); add(new THREE.CylinderGeometry(1.35, 1.35, 0.14, 12), L_(0x23272e), 0, 5.2, 0); }
-  else if (kind === "pilot") { cap(1.05, 0x5a4026, 5.08, 0.6); add(new THREE.BoxGeometry(1.3, 0.34, 0.3), L_(0x1b1b1b), 0, 5.3, 0.86); }
-  else if (kind === "chonai") cap(1.15, 0x8c7a56, 5.0, 0.62);
-  if (kind === "grandma" && save.cskin === 0) add(new THREE.CylinderGeometry(1.05, 1.5, 2.6, 8, 1, true, -0.9, 1.8), L_(0xece6d6, { side: THREE.DoubleSide }), 0, 1.7, 0);
-  if (sk.hem) add(new THREE.CylinderGeometry(1.5, 1.5, 0.5, 8), L_(0xf4f0e8), 0, 1.2, 0);   // 法被の裾の白い帯
-  // 腕と、手に持つもの
+  const cloth = sk.cloth ?? base;
+  const cm = L_(cloth, { flatShading: true, emissive: sk.glow || 0 });
+  const dark = L_(new THREE.Color(cloth).multiplyScalar(0.55).getHex(), { flatShading: true, emissive: sk.glow || 0 });
+  const white = L_(0xf2ede0);
+  const add = (geo, mat, x, y, z, rx = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, 0, rz); g.add(m); return m; };
+  // 脚（もんぺ）と足
+  for (const s of [-1, 1]) {
+    add(new THREE.CylinderGeometry(0.46, 0.34, 2.5, 7), dark, s * 0.48, 1.35, 0);
+    add(new THREE.BoxGeometry(0.5, 0.25, 0.9), L_(0x2a2420), s * 0.48, 0.12, 0.12);
+  }
+  // 胴（前後に薄い）と帯、えり
+  const torso = add(new THREE.CylinderGeometry(0.98, 0.92, 2.5, 8), cm, 0, 3.75, 0);
+  torso.scale.z = 0.66;
+  add(new THREE.CylinderGeometry(0.97, 0.97, 0.42, 8), dark, 0, 2.72, 0).scale.z = 0.68;
+  add(new THREE.CylinderGeometry(0.34, 0.36, 0.3, 7), skinMat, 0, 5.1, 0);
+  add(new THREE.TorusGeometry(0.42, 0.1, 5, 10), white, 0, 5.0, 0, Math.PI / 2);
+  // 頭
+  const head = add(new THREE.SphereGeometry(0.82, 12, 9), skinMat, 0, 5.92, 0);
+  head.scale.set(1, 1.08, 1);
+  for (const s of [-1, 1]) add(new THREE.SphereGeometry(0.16, 6, 5), skinMat, s * 0.82, 5.9, 0);   // 耳
+  const cap = (r, hex, y, frac = 0.55, back = 0) => add(new THREE.SphereGeometry(r, 12, 8, 0, Math.PI * 2, 0, Math.PI * frac), L_(hex, { flatShading: true }), 0, y, back);
+  const band = (hex) => {
+    add(new THREE.TorusGeometry(0.82, 0.13, 6, 16), L_(hex), 0, 6.15, 0, Math.PI / 2);
+    for (const s of [-1, 1]) add(new THREE.BoxGeometry(0.2, 0.9, 0.06), L_(hex), s * 0.16, 5.7, -0.86, 0.25, s * 0.2);   // 鉢巻きの結び目の垂れ
+  };
+  const hair = kind === "grandma" || kind === "grandpa" ? 0xd4d4d4 : 0x17171a;
+  if (sk.head === "hood") {
+    cap(1.06, sk.r === 2 ? 0x1a1226 : 0x6b6250, 5.95, 0.7);
+    add(new THREE.CylinderGeometry(0.95, 1.2, 0.9, 8), L_(sk.r === 2 ? 0x1a1226 : 0x6b6250, { flatShading: true }), 0, 5.2, -0.05);   // 肩にかかる垂れ
+  } else {
+    if (kind === "monk") { /* 剃髪 */ }
+    else if (kind === "fire") { cap(0.98, 0x23272e, 6.02, 0.5); add(new THREE.CylinderGeometry(1.2, 1.25, 0.12, 12), L_(0x23272e), 0, 6.05, 0); }
+    else if (kind === "pilot") { cap(0.9, 0x5a4026, 5.98, 0.62); add(new THREE.TorusGeometry(0.84, 0.09, 5, 14), L_(0x1b1b1b), 0, 6.05, 0, Math.PI / 2); }
+    else if (kind === "chonai") { cap(1.02, 0x8c7a56, 5.95, 0.66); add(new THREE.CylinderGeometry(0.95, 1.15, 0.8, 8), L_(0x8c7a56, { flatShading: true }), 0, 5.25, -0.05); }
+    else {
+      cap(0.88, hair, 5.98, kind === "kid" ? 0.56 : 0.5, -0.04);
+      if (kind === "grandma") add(new THREE.SphereGeometry(0.42, 8, 6), L_(hair), 0, 6.5, -0.5);   // お団子
+    }
+    if (sk.head === "band" || kind === "grandpa") band(0xf4f0e8);
+  }
+  // 背中の目印
+  if (kind === "grandma") add(new THREE.BoxGeometry(1.1, 0.9, 0.4), L_(0xb8863c), 0, 3.05, -0.75);                         // 帯のお太鼓
+  if (kind === "kid") { add(new THREE.BoxGeometry(1.3, 1.5, 0.6), L_(0x7a2a22), 0, 3.9, -0.85); add(new THREE.BoxGeometry(1.34, 0.5, 0.64), L_(0x5e1e18), 0, 4.5, -0.85); }   // ランドセル
+  if (kind === "fire") add(new THREE.CircleGeometry(0.62, 14), new THREE.MeshBasicMaterial({ color: 0xf2ede0 }), 0, 4.0, -0.69, 0, 0).rotation.y = Math.PI;   // 法被の背の丸
+  if (kind === "monk") add(new THREE.BoxGeometry(0.5, 3.0, 0.1), L_(0xd8b23a), 0.1, 3.9, -0.68, 0, 0.6);                    // 袈裟
+  if (kind === "pilot") { add(new THREE.BoxGeometry(1.2, 1.3, 0.5), L_(0x77704a), 0, 3.8, -0.8); add(new THREE.BoxGeometry(0.34, 1.8, 0.06), white, 0.5, 4.6, -0.75, 0.3, -0.3); }   // 落下傘の包みと白い襟巻き
+  if (sk.hem) add(new THREE.CylinderGeometry(1.0, 1.0, 0.3, 8), white, 0, 3.0, 0).scale.z = 0.7;
+  // 左腕は下げ、右腕は肩から振る
+  add(new THREE.CylinderGeometry(0.3, 0.26, 2.3, 6), cm, -1.12, 3.8, 0, 0, -0.12);
+  add(new THREE.SphereGeometry(0.28, 6, 5), skinMat, -1.26, 2.55, 0);
   const arm = new THREE.Group();
-  arm.position.set(1.25, 4.1, 0);
-  const a = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.4, 0.5), cm);
-  a.position.y = -1.0;
-  arm.add(a);
+  arm.position.set(1.12, 4.75, 0);
+  const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.26, 2.3, 6), cm);
+  upper.position.y = -1.1;
+  arm.add(upper);
+  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.28, 6, 5), skinMat);
+  hand.position.y = -2.35;
+  arm.add(hand);
   let held;
-  if (kind === "fire") { held = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.55, 1.1, 8), L_(0x8a6a44)); held.position.set(0, -2.6, 0.2); }
-  else if (kind === "monk") { held = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 3.4, 6), L_(0x6a4a2a)); held.rotation.x = Math.PI / 2; held.position.set(0, -2.1, 1.2); }
-  else if (kind === "pilot") { held = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.5), L_(0xf4f0e8, { side: THREE.DoubleSide })); held.position.set(0, -3.2, 0.3); }
-  else if (kind === "kid") { held = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.1, 5, 8, Math.PI), L_(0x6a4a2a)); held.position.set(0, -2.3, 0.3); }
-  else { held = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 6, 5), L_(0xb7c46a)); held.rotation.x = Math.PI / 2; held.position.set(0, -2.1, 0.8); }
+  if (kind === "fire") { held = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.55, 1.1, 8), L_(0x8a6a44)); held.position.set(0, -3.0, 0.2); }
+  else if (kind === "monk") { held = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 3.4, 6), L_(0x6a4a2a)); held.rotation.x = Math.PI / 2; held.position.set(0, -2.4, 1.2); }
+  else if (kind === "pilot") { held = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.5), L_(0xf4f0e8, { side: THREE.DoubleSide })); held.position.set(0, -3.3, 0.3); }
+  else if (kind === "kid") { held = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.1, 5, 8, Math.PI), L_(0x6a4a2a)); held.position.set(0, -2.6, 0.3); }
+  else { held = new THREE.Mesh(spearGeo, spearMat); held.scale.setScalar(0.42); held.position.set(0, -2.4, 0.9); }
   arm.add(held);
   g.add(arm);
   if (kind === "monk") {
     // 和尚のとなりに釣り鐘
-    const bell = add(new THREE.CylinderGeometry(1.3, 1.7, 3, 10), L_(0x7c6a3a, { emissive: 0x1c1606 }), 2.9, 3.2, 0);
-    add(new THREE.BoxGeometry(0.3, 5.6, 0.3), L_(0x2a2420), 4.6, 2.8, 0);
-    add(new THREE.BoxGeometry(2.4, 0.3, 0.3), L_(0x2a2420), 3.5, 5.5, 0);
+    const bell = add(new THREE.CylinderGeometry(1.3, 1.7, 3, 10), L_(0x7c6a3a, { emissive: 0x1c1606 }), 2.9, 3.6, 0);
+    add(new THREE.BoxGeometry(0.3, 6.2, 0.3), L_(0x2a2420), 4.6, 3.1, 0);
+    add(new THREE.BoxGeometry(2.4, 0.3, 0.3), L_(0x2a2420), 3.5, 6.1, 0);
     g.userData.bell = bell;
   }
   if (kind === "kid") g.scale.setScalar(0.72);
@@ -1227,7 +1323,8 @@ function rebuildAllies(trial = null) {
   // 友軍機は飛行兵が呼ぶ
   const pl = team.find((m) => m.id === "pilot");
   const extra = trial === "wingman" ? 2 : 0;
-  rebuildWingmen((pl ? (pl.lv >= 8 ? 2 : 1) : 0) + extra, pl ? Math.max(2.5, 6 * Math.pow(0.96, pl.lv - 1)) : 3.2, pl ? 4 + 0.3 * (pl.lv - 1) : 4);
+  const tier = pl ? friendTier(pl.lv) : 0;
+  rebuildWingmen((pl ? friendCount(pl.lv) : 0) + extra, pl ? Math.max(2.5, 6 * Math.pow(0.96, pl.lv - 1)) : 3.2, pl ? 4 + 0.3 * (pl.lv - 1) + tier * 1.5 : 4, tier);
 }
 function updateAllies(dt) {
   for (const a of allies) {
@@ -1249,10 +1346,16 @@ function updateAllies(dt) {
       shockRing(top, 1000, 0xffe6a0, 0.9);
       audio.bell();
       shake = Math.max(shake, 3);
+      // 鐘の音が届いた機体ごとに、光の筋と輪と火花を出す（当たったことが見えるように）
       for (const t of ts) {
-        t.hp -= a.dmg * dmgMul(); t.flash = 0.5;
+        for (let k = 1; k <= 10; k++) fx.emit(tmpV2.copy(top).lerp(t.pos, k / 10), ZERO, COL.gold, 4 + k * 0.5, 0.25 + k * 0.03, { drag: 0, alpha: 0.7 });
+        shockRing(t.pos, 60 * t.size, 0xffe6a0, 0.45);
+        sparks(t.pos, 12);
+        t.hp -= a.dmg * dmgMul() * (t.lit > 0.5 ? 1.5 : 1); t.flash = 0.8; t.jolt = rand(-0.3, 0.3);
         if (t.hp <= 0) killPlane(t, null); else ensureBar(t);
       }
+      hitstop = Math.max(hitstop, 0.05);
+      haptic(20);
       continue;
     }
     const t = (a.kind === "kid" && bombs.find((b) => !b.dead)) || ts[0];
@@ -1544,7 +1647,7 @@ const audio = (() => {
     },
     skewer(n) { tone(420 * Math.pow(1.26, n), 900 * Math.pow(1.26, n), 0.12, 0.08, "square"); hiss(0.1, 0.22, 6000, 1500, "bandpass"); },
     bell() { for (const [f, v] of [[196, 0.14], [392, 0.07], [523, 0.04]]) tone(f, f * 0.985, 2.2, v); hiss(0.05, 0.12, 2000, 800); },
-    gun() { for (let i = 0; i < 5; i++) tone(240, 120, 0.05, 0.07, "square", i * 0.055); },
+    gun(v = 1) { for (let i = 0; i < 5; i++) tone(240, 120, 0.05, 0.07 * v, "square", i * 0.055); },
     flyby() { hiss(1.1, 0.16, 300, 2400, "bandpass"); tone(150, 95, 1.0, 0.05, "sawtooth"); },
     thunder() { hiss(1.6, 0.35, 900, 50); tone(70, 30, 1.2, 0.2, "sawtooth", 0.05); },
     pop() { hiss(0.25, 0.2, 3000, 8000, "highpass"); tone(1200, 400, 0.2, 0.04, "triangle"); },
@@ -1687,6 +1790,13 @@ function buildQueue(d) {
   }
   const known = Object.keys(ESC).filter((k) => FIRST.indexOf(k) + 1 < d.n);
   if (known.length && !g.has("letters") && !g.has("mirror")) for (let i = 0; i < Math.round(d.count * 0.3); i++) q.push({ at: 3 + rand(0, span), ...ESC[pick(known)] });
+  if (g.has("rush") && !g.has("swarm") && !g.has("letters")) {
+    const groups = 4 + Math.floor(d.n / 12);
+    for (let k = 0; k < groups; k++) {
+      const x = rand(-170, 170), y = rand(130, 230), at = 3 + k * (span / groups);
+      for (let i = 0; i < 6; i++) q.push({ at: at + i * 0.16, x: x + rand(-80, 80), y: y + rand(-45, 45), z: -760 - i * 30, ...small });
+    }
+  }
   if (g.has("zigzag")) for (const e of q) e.zig = rand(70, 110);
   if (g.has("decoy")) for (let i = 0; i < Math.ceil(d.count / 2); i++) q.push({ at: 3 + rand(0, span), kind: "paper" });
   if (g.has("gold")) for (let i = 0; i < (d.n <= FIRST.length ? 3 : 1); i++) q.push({ at: 3 + (span * (i + 1)) / 4, gold: true, speed: 1.8, hp: 3, drops: 0, y: rand(170, 240) });
@@ -1730,8 +1840,9 @@ function spawn(e) {
     drops: e.drops ?? (boss ? 6 : paper || e.away ? 0 : bombStage ? 3 : 1),
     dropZ: bombStage ? z + rand(60, 160) : rand(-600, -300),
     falling: false, fallT: 0, roll: 0, rollDir: 1, smokeT: 0, ph: Math.random() * 10,
-    flash: 0, jolt: 0, stuck: null, stuckOff: null, dead: false
+    flash: 0, jolt: 0, stuck: null, stuckOff: null, dead: false, gone: false, age: 0, strafeN: 3, strafeT: 0
   };
+  mesh.scale.setScalar(0.001);
   planes.push(p);
   return p;
 }
@@ -1842,8 +1953,8 @@ function screenOf(v) {
   if (tmpV.z > 1) return null;
   return { x: (tmpV.x * 0.5 + 0.5) * window.innerWidth, y: (-tmpV.y * 0.5 + 0.5) * window.innerHeight };
 }
-const alive = (t) => !t.dead && !t.falling && !t.stuck;
-const reach = (t) => alive(t) && !(t.app > 0.3);   // 竹槍が届くところまで来ている
+const alive = (t) => !t.dead && !t.falling && !t.stuck && !t.gone;
+const reach = alive;   // 奥から入ってくる途中の敵にも、竹槍も和尚の鐘も届く
 function pickTarget(sx, sy) {
   let best = null, bd = assistR();
   for (const t of [...planes, ...bombs]) {
@@ -1857,11 +1968,21 @@ function pickTarget(sx, sy) {
 }
 const handOrigin = () => V(5, -6, -6).applyQuaternion(camera.quaternion).add(camera.position);
 
+// T 秒後に敵がいる場所（奥から滑り込んでくる途中の動きも込みで）
+function futurePos(t, T) {
+  const P = t.pos.clone();
+  if (t.app > 0) {
+    const aT = def.n === 1 ? 1.1 : 2.6, u0 = 1 - t.app, u1 = Math.min(1, u0 + T / aT);
+    P.z += FAR * ((1 - (1 - u1) ** 2) - (1 - (1 - u0) ** 2));
+    T = Math.max(0, T - t.app * aT);
+  }
+  return P.addScaledVector(t.vel, T);
+}
 function solve(start, speed, target, aimPoint, grav) {
   let P = target ? target.pos.clone() : aimPoint.clone();
   let T = start.distanceTo(P) / speed;
-  for (let k = 0; k < 3; k++) {
-    P = target ? target.pos.clone().addScaledVector(target.vel, T) : aimPoint.clone();
+  for (let k = 0; k < 4; k++) {
+    P = target ? futurePos(target, T) : aimPoint.clone();
     if (target?.bomb) P.y -= 0.5 * 60 * T * T;
     T = start.distanceTo(P) / speed;
   }
@@ -2102,9 +2223,8 @@ function impale(p, s) {
 function steer(s, q) {
   const speed = Math.max(520, s.vel.length() * 0.62);
   let T = s.pos.distanceTo(q.pos) / speed;
-  tmpV.copy(q.pos).addScaledVector(q.vel, T);
-  T = s.pos.distanceTo(tmpV) / speed;
-  tmpV.copy(q.pos).addScaledVector(q.vel, T).sub(s.pos).normalize();
+  T = s.pos.distanceTo(futurePos(q, T)) / speed;
+  tmpV.copy(futurePos(q, T)).sub(s.pos).normalize();
   s.vel.copy(tmpV).multiplyScalar(speed);
   s.life = Math.max(s.life, T + 0.5);
   s.kebabT = T + 0.3;
@@ -2126,6 +2246,16 @@ function finale(s) {
     p.vel.set(rand(-50, 50), rand(0, 50), rand(30, 110));
     killPlane(p, s, { skewer: n, idx: i });
   }));
+}
+// 戦闘機の機銃掃射。赤い曳光弾が町へ走り、耐久を少し削る
+function strafe(p) {
+  const g = tmpV2.set(p.pos.x + rand(-40, 40), GROUND_Y + 3, p.pos.z + 190).clone();
+  for (let k = 0; k < 12; k++) fx.emit(tmpV.copy(p.pos).lerp(g, k / 12), ZERO, COL.red, 5, 0.14 + k * 0.012, { drag: 0 });
+  sparks(g, 10);
+  smoke.emit(g, V(0, 20, 0), COL.smoke, 14, 1.4, { drag: 0.4, grow: 14, alpha: 0.45 });
+  audio.gun(0.6);
+  st.hp = Math.max(0, st.hp - 1.2 * def.dmg);
+  haptic(8);
 }
 function damageCity(amount, p) {
   st.hp = Math.max(0, st.hp - amount * def.dmg);
@@ -2194,6 +2324,7 @@ function update(dt, real) {
   updateAllies(dt);
 
   for (const p of planes) {
+    if (p.age < 0.6) { p.age += dt; p.mesh.scale.setScalar(p.size * Math.min(1, p.age / 0.6)); }   // 霞の奥からにじみ出る
     // 被弾の光と、探照灯に捉えられた照り
     p.flash = Math.max(0, p.flash - dt * 5);
     p.lit = Math.max(0, p.lit - dt * 2.5);
@@ -2252,11 +2383,15 @@ function update(dt, real) {
           if (p.hp < p.maxHp * 0.5) fx.emit(tmpV2, V(0, 0, -10), COL.fire, rand(5, 8) * p.size, 0.2, { drag: 1 });
         }
       }
-      if (p.away ? p.pos.z < -980 : p.pos.z > -50) {   // 頭上を越えられた／逃げ切られた
-        p.dead = true;
+      // 戦闘機は近づくと町を機銃掃射する
+      if (p.fighter && !p.away && p.app <= 0 && p.strafeN > 0 && p.pos.z > -440 && (p.strafeT -= dt) <= 0) { p.strafeN--; p.strafeT = 0.45; strafe(p); }
+      if (!p.gone && (p.away ? p.pos.z < -980 : p.pos.z > -50)) {   // 頭上を越えられた／逃げ切られた
+        if (p.away) p.gone = true; else p.dead = true;   // 遠ざかる機体は、見えなくなるまで飛ばしておく
+        p.bar?.remove(); p.bar = null;
         if (p.boss) st.bossEscaped = true;
-        else if (!p.paper) damageCity(p.small ? 2 : p.fighter ? 4 : 6);
+        else if (!p.paper) damageCity(p.small ? 2 : p.fighter ? 2 : 6);
       }
+      if (p.gone) { p.mesh.scale.setScalar(p.size * clamp(1 - (-p.pos.z - 1500) / 700, 0.001, 1)); if (p.pos.z < -2200) p.dead = true; }
     }
     p.mesh.position.copy(p.pos);
     p.mesh.rotation.y = p.away ? Math.PI : Math.atan2(p.vel.x, p.vel.z) * 0.6;
@@ -2301,7 +2436,7 @@ function update(dt, real) {
       if (segDist(s.prev, s.pos, t.pos) < 20 * t.size * s.radius) {
         s.hitIds.add(t);
         if (!s.ally && !s.storm) st.hits++;
-        t.hp -= s.dmg;
+        t.hp -= s.dmg * (t.lit > 0.5 ? 1.5 : 1);   // 探照灯に照らされた敵は脆い
         t.flash = 0.5;
         t.jolt = rand(-0.25, 0.25);
         sparks(hitPoint, 18);
@@ -2365,7 +2500,7 @@ function update(dt, real) {
   if (!st.over) {
     if (st.hp <= 0) endStage(false);
     else if (def.g.has("boss") && st.bossEscaped) endStage(false);
-    else if (!st.queue.length && !planes.some((p) => !p.falling) && !bombs.length && !later.length) {
+    else if (!st.queue.length && !planes.some((p) => !p.falling && !p.gone) && !bombs.length && !later.length) {
       if (def.g.has("bombs") && st.stopped < def.bombTarget && st.landed > 0) endStage(false);
       else endStage(true);
     }
@@ -2617,12 +2752,12 @@ function hireCrew(id) {
   save.coins -= c.cost;
   save.crew[id] = 1;
   if (save.team.length < teamSlots()) save.team.push(id);
-  say = `${c.nm}　${c.say}`;
+  say = crewSay(c);
   return true;
 }
 function toggleTeam(id) {
   const c = CREW.find((x) => x.id === id);
-  say = `${c.nm}　${c.say}`;
+  say = crewSay(c);
   const i = save.team.indexOf(id);
   if (i >= 0) save.team.splice(i, 1);
   else if (save.team.length < teamSlots()) save.team.push(id);
@@ -2634,7 +2769,7 @@ function trainCrew(id) {
   if (!crewLv(id) || save.coins < cost) return false;
   save.coins -= cost;
   save.crew[id]++;
-  say = `${c.nm}　${c.say}`;
+  say = crewSay(c);
   return true;
 }
 // 見た目を買う・付け替える
@@ -2868,7 +3003,7 @@ function updateHUD() {
   sb.style.setProperty("--e", Math.round(energy));
   sb.classList.toggle("ready", energy >= 100 && !st.over);
   // 最初の導き（遊びながら一言ずつ）と、最初の一投を促す指の絵
-  const tx = mode !== "play" || st.over ? "" : save.tut === 0 ? "敵を長押しして、はなす" : save.tut === 1 ? "金色の一瞬ではなすと、貫く" : save.tut === 2 && energy >= 100 ? "「嵐」で一斉投擲" : "";
+  const tx = mode !== "play" || st.over ? "" : save.tut === 0 ? "敵を長押しして、はなす" : save.tut === 1 ? "金色の一瞬ではなすと、貫く" : save.tut === 2 && energy >= 100 ? "「嵐」で一斉投擲" : save.best >= 2 && save.best <= 4 && st.t < 7 ? "狙うと探照灯が照らす。照らした敵は脆い" : "";
   if ($("tip").textContent !== tx) $("tip").textContent = tx;
   const first = save.tut === 0 && mode === "play" && !input.charging ? planes.find((p) => reach(p) && !p.paper) : null;
   const hs = first && screenOf(first.pos);
