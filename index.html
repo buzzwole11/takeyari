@@ -3423,6 +3423,26 @@ if (location.search.includes("sound")) {
     b.onclick = (e) => { e.stopPropagation(); audio.unlock(); fn(); };
     box.appendChild(b);
   }
+  // 差し替え候補の音源（web/sfx/）。記号を聞き比べて、良いものを選ぶ
+  const head = (t) => { const h = document.createElement("div"); h.textContent = t; h.style.cssText = "grid-column:1/-1;margin-top:14px;color:var(--gold);font-weight:800;text-align:left"; box.appendChild(h); };
+  const cand = (label, fn) => { const b = document.createElement("button"); b.textContent = label; b.style.cssText = "padding:14px 6px;font-size:15px;border:1px solid rgba(242,196,109,0.5);border-radius:8px;background:#1a1408"; b.onclick = (e) => { e.stopPropagation(); fn(); }; box.appendChild(b); };
+  const one = (f, rate = 1) => { const x = new Audio("sfx/" + f + ".mp3"); x.playbackRate = rate; x.preservesPitch = false; x.play(); return x; };
+  const burst = (f, n, gap, rate) => { for (let i = 0; i < n; i++) setTimeout(() => one(f, rate), i * gap); };
+  const loop = (f, rate) => { const x = one(f, rate); x.loop = true; setTimeout(() => x.pause(), 3500); };
+  head("ここから下は差し替えの候補（上は今の合成音）");
+  const group = (title, pre, n, fn) => { head(title); for (let i = 1; i <= n; i++) fn(pre + i); };
+  group("投げる", "throw", 4, (f) => cand(f, () => one(f)));
+  group("命中", "hit", 4, (f) => cand(f, () => one(f)));
+  group("撃墜", "boom", 5, (f) => cand(f, () => one(f)));
+  group("指揮機の撃墜", "big", 4, (f) => cand(f, () => one(f)));
+  group("機銃（左: 軽い連射 / 右: 重い連射）", "gun", 7, (f) => { cand(f + " 軽", () => burst(f, 7, 60, 1.25)); cand(f + " 重", () => burst(f, 4, 120, 0.7)); });
+  group("プロペラ機（左: そのまま / 右: 低く）", "prop", 7, (f) => { cand(f, () => loop(f, 1)); cand(f + " 低", () => loop(f, 0.6)); });
+  group("噴進機（左: そのまま / 右: 高く）", "jet", 3, (f) => { cand(f, () => loop(f, 1)); cand(f + " 高", () => loop(f, 1.7)); });
+  group("空襲警報", "siren", 2, (f) => cand(f, () => one(f)));
+  group("和尚の鐘", "bell", 2, (f) => cand(f, () => one(f)));
+  group("雷", "thunder", 2, (f) => cand(f, () => one(f)));
+  group("銭", "coin", 2, (f) => cand(f, () => one(f)));
+  group("花火", "fw", 2, (f) => cand(f, () => one(f)));
   document.body.appendChild(box);
 }
 applyQuality();
