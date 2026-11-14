@@ -1169,7 +1169,7 @@ function updateWingmen(dt) {
       w.target = wingTarget(w);
       w.mesh.visible = true;
       w.mesh.scale.setScalar(2.9);
-      audio.flyby();
+      audio.flyby(w.tier);
     }
     w.cool -= dt;
     // 狙っていた敵が先に落ちたら、すぐ次の敵へ向き直る
@@ -1181,7 +1181,7 @@ function updateWingmen(dt) {
       w.vel.lerp(tmpV.multiplyScalar(w.speed / d), Math.min(1, dt * 3.5));
       if (d < 300 && w.cool <= 0) {
         // 曳光弾の一連射
-        w.shots--; w.cool = 0.35;
+        w.shots--; w.cool = 0.5;   // 前の連射の音が終わってから次を撃つ
         for (let k = 0; k < 14; k++) fx.emit(tmpV2.copy(w.pos).lerp(t.pos, k / 14), ZERO, COL.gold, 5, 0.18 + k * 0.012, { drag: 0 });
         audio.gun(1, "f" + w.tier);
         t.hp -= w.dmg * dmgMul() * (t.lit > 0.5 ? 1.5 : 1);
@@ -1767,13 +1767,18 @@ const audio = (() => {
         f2: [250, 0.05, 6, "square", 0.05],           // 疾風: 速めで歯切れよく
         f3: [150, 0.1, 4, "sawtooth", 0.11],          // 震電: 30mm の重い連打
         f4: [170, 0.085, 5, "sawtooth", 0.09],        // 橘花
-        f5: [120, 0.14, 3, "sawtooth", 0.14],         // 秋水: 30mm をゆっくり3発
+        f5: [210, 0.09, 3, "square", 0.07],           // 秋水: 30mm を短く3発（低すぎるとスマホで濁るので中音に）
         friend: [240, 0.055, 5, "square", 0.05]
       }[kind] || [240, 0.055, 5, "square", 0.05];
       for (let i = 0; i < n; i++) tone(f, f * 0.5, len, 0.07 * v, type, i * gap);
-      if (kind === "jet2" || kind === "f3" || kind === "f5") hiss(0.4, 0.14 * v, 900, 120);
+      if (kind === "jet2" || kind === "f3") hiss(0.4, 0.14 * v, 900, 120);
     },
-    flyby() { hiss(1.1, 0.16, 300, 2400, "bandpass"); tone(150, 95, 1.0, 0.05, "sawtooth"); },
+    // 友軍機の飛来。プロペラ機は低い唸り、噴進機（橘花）は高い吸気音、ロケット機（秋水）は噴射の轟き
+    flyby(tier = 0) {
+      if (tier >= 5) { hiss(1.3, 0.22, 500, 3200, "bandpass"); hiss(1.3, 0.12, 2000, 200); }
+      else if (tier === 4) { hiss(1.1, 0.16, 1800, 4200, "bandpass"); tone(900, 1500, 0.9, 0.02, "sawtooth"); }
+      else { hiss(1.1, 0.16, 300, 2400, "bandpass"); tone(150, 95, 1.0, 0.05, "sawtooth"); }
+    },
     thunder() { hiss(1.6, 0.35, 900, 50); tone(70, 30, 1.2, 0.2, "sawtooth", 0.05); },
     pop() { hiss(0.25, 0.2, 3000, 8000, "highpass"); tone(1200, 400, 0.2, 0.04, "triangle"); },
     storm() { hiss(0.9, 0.3, 400, 5000, "bandpass"); [392, 523, 659, 784].forEach((f, i) => tone(f, f * 1.5, 0.3, 0.06, "sawtooth", i * 0.06)); },
