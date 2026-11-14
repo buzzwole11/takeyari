@@ -106,9 +106,9 @@
   #hurt.on { animation: hurt 0.5s ease-out; }
   @keyframes hurt { 0% { opacity: 1; } 100% { opacity: 0; } }
   /* 串刺し・竹嵐の判子 */
-  #stamp { position: fixed; left: 0; right: 0; top: 30%; z-index: 7; pointer-events: none; text-align: center; font-size: 54px; font-weight: 700; letter-spacing: 0.08em; color: #fff3d6; opacity: 0;
+  #stamp { position: fixed; left: 0; right: 0; top: 30%; z-index: 7; pointer-events: none; text-align: center; font-size: min(54px, 13vw); white-space: nowrap; font-weight: 700; letter-spacing: 0.08em; color: #fff3d6; opacity: 0;
     text-shadow: 0 0 22px rgba(255, 150, 50, 0.95), 0 4px 0 rgba(120, 30, 10, 0.9), 0 6px 30px rgba(0, 0, 0, 0.9); }
-  #stamp.gold { color: var(--gold); font-size: 62px; }
+  #stamp.gold { color: var(--gold); font-size: min(62px, 14vw); }
   #stamp.on { animation: stamp 1.25s cubic-bezier(.2, 1.4, .4, 1) both; }
   @keyframes stamp { 0% { opacity: 0; transform: scale(2.6) rotate(-8deg); } 14% { opacity: 1; transform: scale(1) rotate(-4deg); } 75% { opacity: 1; transform: scale(1.04) rotate(-4deg); } 100% { opacity: 0; transform: scale(1.1) rotate(-4deg) translateY(-14px); } }
 
@@ -2106,15 +2106,39 @@ const haptic = (ms) => { if (save.opt.vibe) try { navigator.vibrate?.(ms); } cat
 
 // ---------------- 投擲 ----------------
 // 節のある竹槍。色は頂点に焼いて、1本を1回の描画で出す
+// 竹槍。中が空の竹の稈を、先だけ斜めにそぎ落としたもの。
+// 節は二重の環に盛り上がり、すぐ下に白い粉の帯がある。切り口には肉の厚みと、奥の節（隔壁）が見える。先は火であぶって硬くしてあるので少し焦げ色
 const spearGeo = (() => {
-  const parts = [];
-  for (let i = 0; i < 5; i++) { const c = new THREE.CylinderGeometry(0.55, 0.55, 3.3, 6); c.rotateX(Math.PI / 2); c.translate(0, 0, -7.2 + i * 3.6); parts.push(part(c, i % 2 ? 0xb4c263 : 0xc6d078)); }
-  for (let i = 0; i < 4; i++) { const c = new THREE.CylinderGeometry(0.74, 0.74, 0.45, 6); c.rotateX(Math.PI / 2); c.translate(0, 0, -5.4 + i * 3.6); parts.push(part(c, 0x5f6a2c)); }
-  const tip = new THREE.ConeGeometry(0.62, 4.6, 6); tip.rotateX(Math.PI / 2); tip.translate(0, 0, 11.2); parts.push(part(tip, 0xf6efd6));
-  return mergeGeometries(parts);
+  const SEG = 12, G1 = 0xb9c866, G2 = 0xaab95a, BLOOM = 0xdde3b8, RIDGE = 0x6a6a2e, SCORCH = 0x9a8a48, FLESH = 0xf2e8c4, INNER = 0xc2b184, DEEP = 0x5e5034;
+  const Z0 = -9, ZC = 9.2, CUT = 4.2, NODES = [-5.6, -1.5, 2.9, 7.1];
+  const rad = (z) => 0.64 - ((z - Z0) / (ZC + CUT - Z0)) * 0.14;   // 根元から先へ、わずかに細くなる
+  const rings = [], cols = [];
+  // cut を与えると、輪を斜めの切り口の面にのせる（上側ほど前へ伸びて、とがった先になる）
+  const add = (z, r, col, cut = 0) => {
+    const R = rad(ZC);
+    rings.push(Array.from({ length: SEG }, (_, j) => { const a = (j / SEG) * Math.PI * 2; return [Math.sin(a) * r, Math.cos(a) * r, z + (cut ? cut * ((Math.cos(a) * r) / R + 1) / 2 : 0)]; }));
+    cols.push(col);
+  };
+  // 根元は節で切ってあり、ふさがっている
+  add(Z0, 0.02, FLESH); add(Z0, rad(Z0) * 0.96, FLESH); add(Z0, rad(Z0), G1);
+  NODES.forEach((zn, i) => {
+    const r = rad(zn), g = i % 2 ? G1 : G2, gn = i % 2 ? G2 : G1;
+    add(zn - 0.7, r, g); add(zn - 0.3, r, BLOOM); add(zn - 0.13, r * 1.02, BLOOM);
+    add(zn - 0.06, r * 1.1, RIDGE); add(zn + 0.04, r * 1.045, RIDGE); add(zn + 0.14, r * 1.09, RIDGE);
+    add(zn + 0.24, r, gn); add(zn + 0.5, r, gn);
+  });
+  // 斜めの切り口: 外側の皮 → 切り口の肉（厚み）→ 内側の壁 → 奥の節
+  const R = rad(ZC), RI = R * 0.66;
+  add(ZC - 1.4, rad(ZC - 1.4), G1); add(ZC, R, SCORCH); add(ZC, R, SCORCH, CUT);
+  add(ZC, R, FLESH, CUT); add(ZC, RI, FLESH, CUT);
+  add(ZC, RI, INNER, CUT); add(ZC - 0.6, RI, INNER); add(NODES[3] + 0.3, RI, DEEP); add(NODES[3] + 0.3, 0.02, DEEP);
+  const g = loft(rings), col = new Float32Array(rings.length * SEG * 3), c = new THREE.Color();
+  cols.forEach((hex, i) => { c.set(hex); for (let j = 0; j < SEG; j++) col.set([c.r, c.g, c.b], (i * SEG + j) * 3); });
+  g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  return g;
 })();
-const spearMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x2c2e0c });
-const goldMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0xb07a18 });
+const spearMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x2c2e0c, side: THREE.DoubleSide });
+const goldMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0xb07a18, side: THREE.DoubleSide });
 // 物干し竿＋洗濯物
 const poleMat = new THREE.MeshLambertMaterial({ color: 0xd9c592, emissive: 0x2a2208 });
 const laundryTex = canvasTex(128, 64, (g) => {
@@ -2244,7 +2268,7 @@ function burstRing(x, y) {
 const handSpear = new THREE.Group();
 {
   const sp = new THREE.Mesh(spearGeo, spearMat);
-  sp.rotation.y = Math.PI;
+  sp.rotation.set(0, Math.PI, Math.PI + 0.5);   // 斜めの切り口（中空）がこちらを向くように
   sp.scale.setScalar(0.3);
   sp.position.z = -1.0;
   handSpear.add(sp);
@@ -3387,6 +3411,12 @@ if (DEBUG) {
         scene.add(m);
         return m;
       });
+      // 竹槍も大きく置いて見る（切り口の側と、横から）
+      for (const [x, ry2, rx2] of [[-26, 2.5, 0.35], [26, 1.57, 0]]) {
+        const m = new THREE.Mesh(spearGeo, spearMat);
+        m.scale.setScalar(2.2); m.position.set(x, 16, -62); m.rotation.set(rx2, ry2, 0);
+        scene.add(m); window.__shown.push(m);
+      }
     },
     raid: () => { const a = allies.find((x) => !x.out); if (a) retreat(a); return allies.map((x) => x.kind + (x.out ? ":退避" : "")); },
     // 強化を安い順に買う（ボットの成長を人に近づけるため）
