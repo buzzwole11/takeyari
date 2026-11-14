@@ -1006,126 +1006,179 @@ const propTex = canvasTex(64, 64, (g) => {
 });
 propTex.center.set(0.5, 0.5);
 const propMat = new THREE.MeshBasicMaterial({ map: propTex, transparent: true, depthWrite: false, side: THREE.DoubleSide });
-const planeMat = new THREE.MeshPhongMaterial({ vertexColors: true, flatShading: true, shininess: 70, specular: 0x5a6a7c });
+const planeMat = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 60, specular: 0x4a5866, side: THREE.DoubleSide });   // 面はなめらかに（翼や胴体の丸みを出す）
 const darkMat = new THREE.MeshLambertMaterial({ color: 0x2b3238, flatShading: true });
 
-// 胴体・左翼・右翼を別の部品にしておく（撃墜で翼がもげる）
+// ---------------- 機体の部品づくり ----------------
+// 断面の輪を順につないで、なめらかな面にする（輪はどれも同じ点数）
+function loft(rings) {
+  const n = rings[0].length, pos = [], idx = [];
+  for (const r of rings) for (const p of r) pos.push(p[0], p[1], p[2]);
+  for (let i = 0; i < rings.length - 1; i++) for (let j = 0; j < n; j++) {
+    const a = i * n + j, b = i * n + ((j + 1) % n), c = a + n, d = b + n;
+    idx.push(a, b, d, a, d, c);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+// 胴体。st = [z, 半幅, 上の高さ, 下の高さ, 中心の高さ] を機首から尾部へ
+function hull(st, seg = 12) {
+  return loft(st.map(([z, w, ht = w, hb = ht, yc = 0]) => Array.from({ length: seg }, (_, j) => {
+    const a = (j / seg) * Math.PI * 2, c = Math.cos(a);
+    return [Math.sin(a) * w, yc + c * (c > 0 ? ht : hb), z];
+  })));
+}
+// 翼。断面は本物の翼型（前が丸く、後ろが薄い）。st = [x, y, 前縁のz, 翼弦, 厚み比] を翼根から翼端へ
+const FOIL = [0, 0.025, 0.1, 0.25, 0.45, 0.7, 1];
+const foilY = (t) => 5 * (0.2969 * Math.sqrt(t) - 0.126 * t - 0.3516 * t * t + 0.2843 * t ** 3 - 0.1036 * t ** 4);
+function wingGeo(st, sign = 1) {
+  return loft(st.map(([x, y, zl, c, th]) => [
+    ...FOIL.map((t) => [x * sign, y + foilY(t) * th * c, zl - t * c]),
+    ...FOIL.slice(1, -1).reverse().map((t) => [x * sign, y - foilY(t) * th * c * 0.7, zl - t * c])
+  ]));
+}
+const finGeo = (st) => { const g = wingGeo(st); g.rotateZ(Math.PI / 2); return g; };   // 垂直尾翼（x を高さとして作って立てる）
+// 翼の途中 ax での [中心の高さ, 前縁のz, 翼弦]
+function wingAtX(st, ax) {
+  let i = 0;
+  while (i < st.length - 2 && ax > st[i + 1][0]) i++;
+  const a = st[i], b = st[i + 1], k = clamp((ax - a[0]) / (b[0] - a[0] || 1), 0, 1);
+  return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k];
+}
+// 翼の塗り分け: 前縁（edge）、下面（under）
+const wingCol = (st, c) => (x, y, z) => {
+  const ax = Math.abs(x), [yc, zl, ch] = wingAtX(st, ax);
+  if ((zl - z) / ch < 0.04 && c.edge && ax < (c.edgeTo ?? 1e9)) return c.edge;
+  return y < yc - 0.02 ? c.under || 0 : 0;
+};
+const at = (g, x, y, z) => { g.translate(x, y, z); return g; };
+
+// 重爆。胴体・左翼・右翼を別の部品にしておく（撃墜で翼がもげる）
 const BOMBER = (() => {
-  const AL = 0xb9c4cb, DK = 0x2c3338, GL = 0x16303f, RD = 0x93301f;
-  const fus = new THREE.LatheGeometry([[0, -31], [1.8, -29], [3.2, -22], [4.1, -8], [4.2, 10], [3.6, 22], [2.2, 29], [0.6, 32], [0, 32.4]].map(([r, y]) => new THREE.Vector2(r, y)), 10);
-  fus.rotateX(Math.PI / 2);
-  const canopy = new THREE.SphereGeometry(2.7, 8, 6);
-  canopy.scale(1, 0.8, 1.4); canopy.translate(0, 1.2, 28.5);
-  const tail = shapeGeo([[-12, -1.2], [-2, -3.5], [2, -3.5], [12, -1.2], [12, 1.2], [2, 3], [-2, 3], [-12, 1.2]], 0.6);
-  tail.rotateX(-Math.PI / 2); tail.translate(0, 0.5, -27);
-  const fin = shapeGeo([[-33, 0], [-20, 0], [-28, 12], [-32.5, 12.5]], 0.7);
-  fin.rotateY(-Math.PI / 2); fin.translate(0.35, 2, 0);
-  const body = mergeGeometries([
-    part(fus, AL, (x, y, z) => (z > 25.5 ? GL : z < -9 && z > -13 ? RD : 0)),
-    part(canopy, GL), part(tail, AL), part(fin, AL, (x, y) => (y > 10.5 ? RD : 0))
-  ]);
+  const AL = 0xb7c2c9, AL2 = 0x97a3ab, DK = 0x20262b, GL = 0x1b3442, BOOT = 0x2a2f33, RD = 0x93301f;
+  const R = 3.3, WX = 20, WZ = 6;
+  // 葉巻形の胴体。機首は丸いガラス張り、尾部は少し持ち上がる
+  const fus = hull([
+    [31.6, 0.3], [30.8, 1.4], [29.2, 2.35], [26.6, 3.0], [26.5, 3.0], [23, R], [18.1, R], [18, R], [8, R], [7.9, R], [-2, R], [-2.1, R], [-12, R], [-12.1, R],
+    [-17, 3.0, 3.05, 2.8, 0.2], [-23, 2.3, 2.45, 1.9, 0.7], [-28, 1.5, 1.7, 1.1, 1.15], [-30.6, 1.0, 1.15, 0.8, 1.35], [-31.8, 0.3, 0.4, 0.3, 1.4]
+  ], 14);
+  const belly = (y) => y < -R * 0.72;
+  const parts = [part(fus, AL, (x, y, z) => (z > 26.55 ? GL : belly(y) && ((z < 18.05 && z > 7.95) || (z < -2.05 && z > -12.05)) ? DK : z < -30.5 ? GL : 0))];
+  // 機首の窓枠、銃塔、尾部銃座
+  parts.push(part(at(new THREE.TorusGeometry(2.38, 0.12, 4, 14), 0, 0, 29.2), AL2));
+  for (const [y, z] of [[R, 17], [R, -8], [-R, 21], [-R, -15]]) { const t = new THREE.SphereGeometry(1.15, 8, 5); t.scale(1, 0.62, 1); parts.push(part(at(t, 0, y, z), AL2)); }
+  // 水平尾翼と、背びれのある大きな垂直尾翼
+  const TS = [[1.0, 1.1, -22.4, 7.4, 0.12], [12.6, 1.5, -24.4, 3.8, 0.1], [13.6, 1.55, -25.2, 2.0, 0.07]];
+  for (const s of [-1, 1]) parts.push(part(wingGeo(TS, s), AL, wingCol(TS, { edge: BOOT })));
+  parts.push(part(at(finGeo([[0.6, 0, -15, 14.5, 0.07], [5.5, 0, -22.2, 9.2, 0.1], [12.2, 0, -25.8, 5.6, 0.09], [13.6, 0, -27, 3.2, 0.06]]), 0, 1.6, 0), AL, (x, y) => (y > 13.6 ? RD : 0)));
+  const body = mergeGeometries(parts);
+  // 細長い主翼（つけ根が厚く、先へ細く、わずかに上反角）と、前へ突き出た4つの発動機
+  const WS = [[2.4, -0.3, 11.6, 11.6, 0.2], [12, 0.45, 10.7, 9.5, 0.17], [24, 1.4, 9.5, 7.3, 0.14], [41, 2.75, 7.8, 4.5, 0.11], [43, 2.9, 7.0, 2.4, 0.08]];
+  const ENG = [11, 22.5];
   const wing = (sign) => {
-    const w = shapeGeo([[3.2, -6.5], [38, -2.2], [38, 1.6], [3.2, 5.2]].map(([x, y]) => [x * sign, y]), 0.9);
-    w.rotateX(-Math.PI / 2); w.translate(0, -0.6, 4);
-    const parts = [part(w, AL)];
-    for (const x of [10.5, 21]) {
-      const nac = new THREE.CylinderGeometry(1.5, 1.9, 10, 8);
-      nac.rotateX(Math.PI / 2); nac.translate(x * sign, -0.8, 8.5);
-      parts.push(part(nac, DK));
-      const sp = new THREE.ConeGeometry(0.9, 2, 6);
-      sp.rotateX(Math.PI / 2); sp.translate(x * sign, -0.8, 14.4);
-      parts.push(part(sp, 0x8a9197));
+    const ws = [part(wingGeo(WS, sign), AL, wingCol(WS, { edge: BOOT }))];
+    for (const x of ENG) {
+      const [yc, zl] = wingAtX(WS, x), k = x < 15 ? 1 : 0.86;
+      const n = hull([[zl + 6.7, 0.9], [zl + 6.5, 1.72], [zl + 6.45, 1.75], [zl + 4.6, 1.85], [zl + 4.5, 1.85], [zl, 1.8, 1.6, 2.0], [zl - 5 * k, 1.45, 1.1, 1.9], [zl - 9 * k, 0.8, 0.5, 1.2], [zl - 11.5 * k, 0.15]], 10);
+      ws.push(part(at(n, x * sign, yc - 0.35, 0), AL, (px, py, pz) => (pz > zl + 6.48 ? DK : pz > zl + 4.55 ? AL2 : 0)));
+      const sp = new THREE.ConeGeometry(0.62, 1.7, 8); sp.rotateX(Math.PI / 2);
+      ws.push(part(at(sp, x * sign, yc - 0.35, zl + 7.4), AL2));
     }
-    const g = mergeGeometries(parts);
-    g.translate(-20 * sign, 0, -6);   // 原点を翼の真ん中に（もげたとき自然に回るように）
-    return g;
+    return at(mergeGeometries(ws), -WX * sign, 0, -WZ);
   };
-  const props = mergeGeometries([-21, -10.5, 10.5, 21].map((x) => { const p = new THREE.PlaneGeometry(10.6, 10.6); p.translate(x, -0.8, 14.7); return p; }));
-  return { body, wingL: wing(-1), wingR: wing(1), props };
+  const props = mergeGeometries([-1, 1].flatMap((s) => ENG.map((x) => { const [yc, zl] = wingAtX(WS, x); return at(new THREE.PlaneGeometry(10.8, 10.8), x * s, yc - 0.35, zl + 7.5); })));
+  return { body, wingL: wing(-1), wingR: wing(1), props, wingAt: [WX, 0, WZ], tail: -31 };
 })();
 
-// 小型機（戦闘機3種と噴進機2種）。形は似せるが、名前や記章は出さない
+// 小型機（敵の戦闘機・噴進機と、味方の迎撃機）。形は似せるが、敵機には名前や記章を出さない
 function fighterModel(o) {
-  const L = o.len, S = o.span / 2, C = o.col, DKc = 0x15191d, GL = 0x16303f, RED = 0xc8281e;
-  const fat = o.fat || 1;
-  const prof = (o.jet
-    ? [[0.7, -L / 2], [1.3, -L * 0.3], [1.9, 0], [1.8, L * 0.28], [1.0, L * 0.44], [0.35, L / 2]]
-    : o.radial
-      ? [[0, -L / 2], [0.8, -L * 0.42], [1.9, -L * 0.08], [2.4, L * 0.3], [2.35, L * 0.46], [1.3, L / 2]]
-      : [[0, -L / 2], [0.8, -L * 0.42], [1.5, -L * 0.15], [1.75, L * 0.18], [1.45, L * 0.42], [0.55, L / 2]]).map(([r, y]) => [r * fat, y]);
-  const fus = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 8);
-  fus.rotateX(Math.PI / 2);
-  const noseZ = L * (o.jet ? 0.47 : 0.4);
-  const parts = [part(fus, C, (x, y, z) => (z > noseZ ? (o.jet ? DKc : o.spin || DKc) : !o.jet && !o.radial && y > 0.9 && z > L * 0.12 ? DKc : 0))];
-  const can = new THREE.SphereGeometry(1.35, 7, 5);
-  can.scale(0.8, 0.9, 2.1); can.translate(0, 1.5 * fat, L * (o.canard ? 0.16 : 0.08));
-  parts.push(part(can, GL));
-  if (!o.noTail && !o.canard) {
-    const tail = shapeGeo([[-5.2, -0.8], [-0.8, -2], [0.8, -2], [5.2, -0.8], [5.2, 0.8], [0.8, 1.4], [-0.8, 1.4], [-5.2, 0.8]], 0.35);
-    tail.rotateX(-Math.PI / 2); tail.translate(0, 0.5, -L * 0.42);
-    parts.push(part(tail, C));
+  const L = o.len, S = o.span / 2, C = o.col, UN = o.belly ?? C, DKc = 0x15191d, GL = 0x17313f, RED = 0xc8281e, WH = 0xeeeae0;
+  const R = (o.radial ? 1.75 : o.jet ? 1.5 : o.canard ? 1.5 : 1.35) * (o.fat || 1);
+  // 胴体の輪郭（機首から尾部へ、[長さに対する位置, 太さ]）
+  const prof = o.noTail ? [[0.5, 0.1], [0.44, 0.5], [0.3, 0.9], [0.1, 1], [-0.15, 0.9], [-0.35, 0.62], [-0.48, 0.32], [-0.5, 0.22], [-0.505, 0.08]]
+    : o.canard ? [[0.5, 0.06], [0.4, 0.4], [0.2, 0.72], [0, 0.94], [-0.2, 1], [-0.36, 0.9], [-0.46, 0.55], [-0.5, 0.3]]
+    : o.jet ? [[0.5, 0.06], [0.47, 0.42], [0.4, 0.75], [0.25, 0.97], [0.05, 1], [-0.2, 0.92], [-0.4, 0.62], [-0.5, 0.45], [-0.505, 0.25]]
+    : o.radial ? [[0.478, 0.3], [0.474, 0.66], [0.458, 0.97], [0.452, 1], [0.3, 1], [0.296, 0.97], [0.1, 0.95], [-0.12, 0.78], [-0.32, 0.48], [-0.46, 0.2], [-0.5, 0.08]]
+    : [[0.5, 0.32], [0.458, 0.62], [0.452, 0.64], [0.36, 0.88], [0.2, 1], [0.02, 1], [-0.2, 0.82], [-0.38, 0.45], [-0.5, 0.12]];
+  const fus = hull(prof.map(([zf, r]) => [zf * L, r * R, r * R * 1.12, r * R * 0.95]), 12);
+  const parts = [part(fus, C, (x, y, z) => {
+    const zf = z / L;
+    if (o.radial) return zf > 0.468 ? DKc : zf > 0.298 ? o.cowl || (y < -R * 0.3 ? UN : 0) : y < -R * 0.3 ? UN : 0;
+    if (o.jet || o.noTail) return zf < -0.499 ? DKc : y < -R * 0.3 ? UN : 0;
+    if (o.canard) return y < -R * 0.3 ? UN : 0;
+    return zf > 0.455 ? o.spin || DKc : y > R * 0.55 && zf > 0.1 ? DKc : y < -R * 0.3 ? UN : 0;   // 液冷: 色つきの機首と、黒い防眩塗装
+  })];
+  // プロペラの軸（スピナー）
+  if (!o.jet && !o.noTail) {
+    const sp = new THREE.ConeGeometry((o.radial ? 0.3 : 0.34) * R, 0.07 * L, 8); sp.rotateX(o.canard ? -Math.PI / 2 : Math.PI / 2);
+    parts.push(part(at(sp, 0, 0, (o.canard ? -0.535 : o.radial ? 0.51 : 0.535) * L), o.spin || 0x6a6e68));
+  }
+  // 風防
+  const can = new THREE.SphereGeometry(1, 9, 6);
+  can.scale(0.52 * R, 0.66 * R, (o.bubble ? 0.1 : 0.125) * L);
+  parts.push(part(at(can, 0, R * 0.9, (o.noTail ? 0.16 : o.canard ? 0.18 : o.jet ? 0.2 : o.radial ? 0.04 : 0) * L), GL));
+  if (o.scoop) parts.push(part(hull([[0.02 * L, 0.5, 0.3, 0.5, -R], [0, 0.75, 0.3, 0.8, -R], [-0.16 * L, 0.7, 0.3, 0.75, -R * 0.9], [-0.24 * L, 0.2, 0.1, 0.2, -R * 0.75]], 8), UN, (x, y, z) => (z > 0.01 * L ? DKc : 0)));
+  if (o.jet && !o.pods && !o.twin) for (const s of [-1, 1]) { const i = new THREE.SphereGeometry(1, 7, 5); i.scale(0.35 * R, 0.5 * R, 0.07 * L); parts.push(part(at(i, s * 0.92 * R, -0.1 * R, 0.2 * L), DKc)); }   // 胴体わきの空気取り入れ口
+  // 尾翼
+  if (!o.canard) parts.push(part(at(finGeo([[0.2 * R, 0, -0.27 * L, 0.21 * L, 0.09], [0.14 * L, 0, -0.36 * L, 0.14 * L, 0.09], [0.2 * L, 0, -0.41 * L, 0.08 * L, 0.06]]), 0, 0.3 * R, 0), C, (x, y) => (y > 0.3 * R + 0.165 * L ? o.tipCol || 0 : 0)));
+  if (!o.canard && !o.noTail) {
+    const TS = [[0.2 * R, 0.35 * R, -0.33 * L, 0.17 * L, 0.1], [0.36 * S, 0.4 * R, -0.37 * L, 0.1 * L, 0.09], [0.4 * S, 0.4 * R, -0.39 * L, 0.05 * L, 0.06]];
+    for (const s of [-1, 1]) parts.push(part(wingGeo(TS, s), C, wingCol(TS, { under: UN })));
   }
   if (o.canard) {
-    // 前翼（機首の小さな翼）
-    const fore = shapeGeo([[-4.6, -0.7], [-0.6, -1.6], [0.6, -1.6], [4.6, -0.7], [4.6, 0.7], [0.6, 1.2], [-0.6, 1.2], [-4.6, 0.7]], 0.3);
-    fore.rotateX(-Math.PI / 2); fore.translate(0, 0.2, L * 0.36);
-    parts.push(part(fore, C));
+    // 機首の前翼
+    const FS = [[0.2 * R, 0, 0.42 * L, 0.13 * L, 0.1], [0.3 * S, 0, 0.39 * L, 0.07 * L, 0.08], [0.33 * S, 0, 0.38 * L, 0.04 * L, 0.06]];
+    for (const s of [-1, 1]) parts.push(part(wingGeo(FS, s), C, wingCol(FS, { under: UN })));
   }
-  if (!o.canard) {
-    const fin = shapeGeo([[-L * 0.5, 0], [-L * 0.3, 0], [-L * 0.42, 5.2], [-L * 0.5, 5.4]], 0.4);
-    fin.rotateY(-Math.PI / 2); fin.translate(0.2, 0.8, 0);
-    parts.push(part(fin, C, (x, y) => (y > 4.6 ? o.tipCol || 0 : 0)));
-  }
-  if (o.scoop) { const s = new THREE.BoxGeometry(1.5, 1.2, 4.5); s.translate(0, -2, -L * 0.08); parts.push(part(s, C)); }
   const body = mergeGeometries(parts);
-  const wz = L * (o.canard ? -0.24 : o.noTail ? -0.05 : 0.08);   // 翼のつけ根の前後位置
-  const sw = o.sweep || 0;
+  // 主翼
+  const x0 = 0.7 * R, c0 = o.chord || 0.3 * L, ct = c0 * (o.taper ?? 0.5), sw = o.sweep ?? c0 * 0.14, di = o.dihedral ?? 0.1;
+  const zl0 = (o.canard ? -0.1 : o.noTail ? 0.16 : o.jet ? 0.16 : 0.2) * L, y0 = (o.mid ? -0.1 : -0.55) * R;
+  const stn = (k, yy, th, cs = 1) => [x0 + (S - x0) * k, yy, zl0 - sw * k - (cs < 1 ? ct * 0.22 : 0), (c0 + (ct - c0) * k) * cs, th];
+  const WS = o.gull
+    ? [stn(0, -0.15 * R, 0.15), stn(0.26, -1.3 * R, 0.15), stn(0.94, -1.3 * R + 0.68 * (S - x0) * 0.17, 0.11), stn(1, -1.3 * R + 0.74 * (S - x0) * 0.17, 0.07, 0.5)]
+    : [stn(0, y0, 0.15), stn(0.94, y0 + 0.94 * (S - x0) * Math.tan(di), 0.11), stn(1, y0 + (S - x0) * Math.tan(di), 0.07, 0.5)];
   const wing = (sign) => {
-    const ws = [];
-    const seg = (x0, x1, c0, c1, rot, y0, back = 0) => {
-      const g = shapeGeo([[0, -c0 * 0.6], [x1 - x0, -c1 * 0.45 + back], [x1 - x0, c1 * 0.55 + back], [0, c0 * 0.4]].map(([x, y]) => [x * sign, y]), 0.5);
-      g.rotateX(-Math.PI / 2); g.rotateZ(rot * sign); g.translate(x0 * sign, y0, wz);
-      ws.push(part(g, C));
+    const ws = [part(wingGeo(WS, sign), C, wingCol(WS, { under: UN, edge: o.maru ? 0xe0a020 : 0, edgeTo: 0.52 * S }))];   // 味方機は翼の前縁に黄色の識別帯
+    const pod = (ax, r, len, dy) => {
+      const [yc, zl, ch] = wingAtX(WS, ax), zc = zl - ch * 0.35;
+      const n = hull([[zc + len * 0.52, r * 0.55], [zc + len * 0.5, r * 0.9], [zc + len * 0.3, r], [zc - len * 0.3, r * 0.9], [zc - len * 0.5, r * 0.6], [zc - len * 0.52, r * 0.3]], 8);
+      ws.push(part(at(n, ax * sign, yc + dy, 0), o.podCol || C, (px, py, pz) => (pz > zc + len * 0.505 || pz < zc - len * 0.505 ? DKc : 0)));
     };
-    if (o.gull) {
-      // 逆ガル翼: つけ根でいったん下がり、そこから上へ折れる
-      seg(1.2, 6, 7, 6.4, -0.42, -0.4);
-      seg(5.6, S, 6.4, 3.2, 0.2, -2.4);
-    } else seg(1.2, S, o.chord || 6.5, (o.chord || 6.5) * 0.5, 0.05, -1, sw);
-    if (o.tank) { const t = new THREE.CapsuleGeometry(0.9, 5, 3, 6); t.rotateX(Math.PI / 2); t.translate(S * sign, -0.2, wz); ws.push(part(t, C)); }
-    if (o.twin) { const n = new THREE.CylinderGeometry(1.25, 1.1, 11, 8); n.rotateX(Math.PI / 2); n.translate(2.9 * sign, -0.9, wz - 0.5); ws.push(part(n, C, (x, y, z) => (z > wz + 4.6 ? DKc : 0))); }
-    if (o.pods) { const n = new THREE.CylinderGeometry(1.0, 0.9, 9, 8); n.rotateX(Math.PI / 2); n.translate(S * 0.42 * sign, -1.9, wz + 0.5); ws.push(part(n, C, (x, y, z) => (z > wz + 4.4 ? DKc : 0))); }
-    if (o.canard) { const f = shapeGeo([[0, 0], [3.2, 0], [1.2, 3.6], [0.4, 3.6]], 0.3); f.rotateY(-Math.PI / 2); f.translate(S * 0.55 * sign, -0.8, wz - sw * 0.55 - 1); ws.push(part(f, C)); }   // 翼の途中に立つ垂直尾翼
-    if (o.maru) for (const up of [1, -1]) {
-      // 日の丸（翼の上下）
-      const m = new THREE.CircleGeometry(o.span * 0.075, 14);
-      m.rotateX((-Math.PI / 2) * up); m.translate(S * 0.62 * sign, -1 + S * 0.62 * 0.05 + (up > 0 ? 0.56 : -0.06), wz - sw * 0.62);
-      ws.push(part(m, RED));
+    if (o.tank) pod(S - 0.3, 0.75, 0.3 * L, 0);            // 翼端の増槽
+    if (o.twin) pod(x0 + 1.1, 1.05, 0.42 * L, -0.1);        // 翼のつけ根の発動機
+    if (o.pods) pod(0.4 * S, 0.95, 0.4 * L, -1.25);         // 翼の下に吊った発動機
+    if (o.canard) { const f = finGeo([[0, 0, 0, 0.16 * L, 0.08], [0.12 * L, 0, -0.06 * L, 0.08 * L, 0.06]]); const [yc, zl, ch] = wingAtX(WS, 0.5 * S); ws.push(part(at(f, 0.5 * S * sign, yc, zl - ch * 0.45), C)); }   // 翼の途中に立つ垂直尾翼
+    if (o.maru) {
+      // 日の丸（上面は白ふち付き）
+      const ax = 0.62 * S, [yc, zl, ch] = wingAtX(WS, ax), r = Math.min(o.span * 0.068, ch * 0.4), up = 0.5 * 0.125 * ch + 0.07;
+      const disc = (rr, dy, col, flip) => { const m = new THREE.CircleGeometry(rr, 16); m.rotateX(flip ? Math.PI / 2 : -Math.PI / 2); m.rotateZ(di * sign); ws.push(part(at(m, ax * sign, yc + dy, zl - ch * 0.42), col)); };
+      disc(r * 1.16, up, WH, false); disc(r, up + 0.03, RED, false); disc(r, -up * 0.75, RED, true);
     }
-    const g = mergeGeometries(ws);
-    g.translate((-S / 2) * sign, 0, -wz);
-    return g;
+    return at(mergeGeometries(ws), (-S / 2) * sign, 0, -(zl0 - c0 / 2));
   };
-  // プロペラは機首。推進式（震電）は尾部
-  const prop = o.jet ? null : (() => { const p = new THREE.PlaneGeometry(11, 11); p.translate(0, 0, o.canard ? -L / 2 - 0.4 : L / 2 + 0.4); return p; })();
-  return { body, wingL: wing(-1), wingR: wing(1), props: prop, wingAt: [S / 2, 0, wz], tail: -L / 2 };
+  const prop = o.jet || o.noTail ? null : at(new THREE.PlaneGeometry(11, 11), 0, 0, (o.canard ? -0.55 : o.radial ? 0.5 : 0.52) * L);
+  return { body, wingL: wing(-1), wingR: wing(1), props: prop, wingAt: [S / 2, 0, zl0 - c0 / 2], tail: -L / 2 };
 }
 const MODELS = {
-  bomber: { ...BOMBER, wingAt: [20, 0, 6] },
-  fighter: fighterModel({ len: 22, span: 30, col: 0xc6cfd5, spin: 0xb8322a, tipCol: 0xb8322a, scoop: true }),      // 液冷の銀の戦闘機
-  gull: fighterModel({ len: 23, span: 33, col: 0x22344c, radial: true, gull: true }),                               // 逆ガル翼の艦上機
-  cat: fighterModel({ len: 22, span: 32, col: 0x2c4460, radial: true, chord: 8 }),                                  // ずんぐりした艦上戦闘機
-  jet: fighterModel({ len: 24, span: 31, col: 0xcfd6db, jet: true, tank: true }),                                   // 翼端に増槽をつけた噴進機
-  jet2: fighterModel({ len: 25, span: 30, col: 0x1f3048, jet: true, twin: true, chord: 7.5 })                       // 翼のつけ根に2発の噴進機
+  bomber: BOMBER,
+  fighter: fighterModel({ len: 22, span: 26, col: 0xc3ccd2, spin: 0xb8322a, tipCol: 0xb8322a, scoop: true, bubble: true, taper: 0.55 }),   // 液冷の銀の戦闘機
+  gull: fighterModel({ len: 23, span: 28, col: 0x22344c, radial: true, gull: true, cowl: 0x1a2738 }),                              // 逆ガル翼の艦上機
+  cat: fighterModel({ len: 22, span: 29, col: 0x2c4460, belly: 0xc9cfd2, radial: true, chord: 7.8, fat: 1.15, mid: true }),        // ずんぐりした艦上戦闘機
+  jet: fighterModel({ len: 24, span: 27, col: 0xcbd3d8, jet: true, tank: true, mid: true, taper: 0.45 }),                          // 翼端に増槽をつけた噴進機
+  jet2: fighterModel({ len: 25, span: 28, col: 0x1f3048, jet: true, twin: true, chord: 7.5, mid: true })                           // 翼のつけ根に2発の噴進機
 };
-// 味方の迎撃機。飛行兵を育てると、機種が新しくなっていく
+// 味方の迎撃機。飛行兵を育てると、機種が新しくなっていく。上面は緑、下面は灰色、翼に日の丸
 const FRIENDS = [
-  { nm: "零戦", lv: 1, m: fighterModel({ len: 22, span: 32, col: 0x3d5e44, radial: true, spin: 0x2a2a2a, maru: true }) },
-  { nm: "紫電改", lv: 4, m: fighterModel({ len: 22, span: 31, col: 0x2f4d36, radial: true, chord: 8, fat: 1.12, maru: true }) },
-  { nm: "疾風", lv: 8, m: fighterModel({ len: 24, span: 31, col: 0x66704a, radial: true, chord: 7, maru: true }) },
-  { nm: "震電", lv: 12, m: fighterModel({ len: 23, span: 30, col: 0x34523a, canard: true, sweep: 6, chord: 7.5, maru: true }) },
-  { nm: "橘花", lv: 17, m: fighterModel({ len: 22, span: 29, col: 0x3d5e44, jet: true, pods: true, maru: true }) },
-  { nm: "秋水", lv: 23, m: fighterModel({ len: 16, span: 27, col: 0xe08a2a, jet: true, noTail: true, sweep: 8, chord: 9, fat: 1.35, maru: true }) }
+  { nm: "零戦", lv: 1, m: fighterModel({ len: 22, span: 29, col: 0x48644e, belly: 0xb4b8ae, radial: true, cowl: 0x17191b, spin: 0x8a8e88, taper: 0.42, maru: true }) },
+  { nm: "紫電改", lv: 4, m: fighterModel({ len: 22, span: 28, col: 0x2f4d36, belly: 0xb9c0c2, radial: true, cowl: 0x17191b, chord: 7.4, fat: 1.15, spin: 0x7a3a1c, maru: true }) },
+  { nm: "疾風", lv: 8, m: fighterModel({ len: 24, span: 27, col: 0x5d6a48, belly: 0xaeb4b0, radial: true, cowl: 0x2a3024, spin: 0x7a3a1c, maru: true }) },
+  { nm: "震電", lv: 12, m: fighterModel({ len: 23, span: 27, col: 0x34523a, belly: 0xb4b8ae, canard: true, sweep: 6.5, chord: 7.5, spin: 0x8a8e88, mid: true, maru: true }) },
+  { nm: "橘花", lv: 17, m: fighterModel({ len: 21, span: 25, col: 0x3d5e44, belly: 0xb4b8ae, jet: true, pods: true, maru: true }) },
+  { nm: "秋水", lv: 23, m: fighterModel({ len: 15, span: 24, col: 0xe08a2a, belly: 0xd8d2c0, noTail: true, sweep: 7, chord: 8, taper: 0.4, fat: 1.3, mid: true, dihedral: 0.03, maru: true }) }
 ];
 FRIENDS.forEach((f, i) => { MODELS["f" + i] = f.m; });
 const friendTier = (lv) => FRIENDS.reduce((t, f, i) => (lv >= f.lv ? i : t), 0);
@@ -3323,6 +3376,18 @@ if (DEBUG) {
     },
     step: (sec) => { for (let t = 0; t < sec; t += 1 / 60) update(1 / 60, 1 / 60); },
     storm: () => { energy = 100; beginStorm(); },
+    // 機体を全部ならべて見る（形の確認用）
+    show: (rx = 0, ry = 0) => {
+      for (const m of (window.__shown || [])) scene.remove(m);
+      window.__shown = Object.keys(MODELS).map((k, i) => {
+        const m = buildBomber(k);
+        m.scale.setScalar(k === "bomber" ? 0.42 : 1);
+        m.position.set((i % 4 - 1.5) * 40, 68 - Math.floor(i / 4) * 30, -120);
+        m.rotation.set(rx, ry, 0);
+        scene.add(m);
+        return m;
+      });
+    },
     raid: () => { const a = allies.find((x) => !x.out); if (a) retreat(a); return allies.map((x) => x.kind + (x.out ? ":退避" : "")); },
     // 強化を安い順に買う（ボットの成長を人に近づけるため）
     buyCheapest: () => {
