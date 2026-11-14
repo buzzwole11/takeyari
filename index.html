@@ -1860,7 +1860,7 @@ const audio = (() => {
     engine(near, jet = 0) {
       if (!ac) return;
       // 噴進機は近づくほど音が高く大きくなり、通りすぎると下がる
-      jetGain.gain.setTargetAtTime(mode === "play" ? jet * 0.22 : 0, ac.currentTime, 0.15);
+      jetGain.gain.setTargetAtTime(mode === "play" || testJet ? jet * 0.22 : 0, ac.currentTime, 0.15);
       jetBp.frequency.setTargetAtTime(1700 + jet * 2600, ac.currentTime, 0.2);
       jetOsc.frequency.setTargetAtTime(700 + jet * 1100, ac.currentTime, 0.2);
       engineGain.gain.setTargetAtTime(mode === "play" ? 0.02 + near * 0.06 : 0, ac.currentTime, 0.3);
@@ -3311,7 +3311,7 @@ function frame(now) {
   {
     let prop = 9999, jet = 9999;
     for (const p of planes) { if (p.falling || p.paper) continue; const d = Math.abs(p.pos.z); if (p.jet) jet = Math.min(jet, d); else prop = Math.min(prop, d); }
-    audio.engine(clamp(1 - prop / 1500, 0, 1), clamp(1 - jet / 1300, 0, 1));
+    audio.engine(clamp(1 - prop / 1500, 0, 1), Math.max(testJet, clamp(1 - jet / 1300, 0, 1)));
   }
 
   for (let i = floats.length - 1; i >= 0; i--) {
@@ -3403,6 +3403,28 @@ if (DEBUG) {
   };
 }
 
+// 音の試聴。URL に ?sound を付けて開くと、音をひとつずつ鳴らせる一覧が出る
+let testJet = 0;
+if (location.search.includes("sound")) {
+  const list = [
+    ["投げる", () => audio.throw(1)], ["完全投擲", () => audio.perfect()], ["命中", () => audio.hit()], ["撃墜", () => audio.boom(false)], ["指揮機 撃墜", () => audio.boom(true)],
+    ["串刺し", () => audio.skewer(3)], ["竹嵐", () => audio.storm()], ["空襲警報", () => audio.siren()], ["雷", () => audio.thunder()], ["和尚の鐘", () => audio.bell()], ["花火", () => audio.pop()],
+    ["敵 護衛戦闘機の機銃", () => audio.gun(1, "fighter")], ["敵 逆ガル翼の機銃", () => audio.gun(1, "gull")], ["敵 艦上戦闘機の機銃", () => audio.gun(1, "cat")],
+    ["敵 噴進機の機銃", () => audio.gun(1, "jet")], ["敵 双発噴進機の機銃", () => audio.gun(1, "jet2")],
+    ["噴進機の飛ぶ音（3秒）", () => { testJet = 0.8; setTimeout(() => { testJet = 0; }, 3000); }],
+    ...FRIENDS.flatMap((f, i) => [[f.nm + " 飛来", () => audio.flyby(i)], [f.nm + " 機銃", () => audio.gun(1, "f" + i)]])
+  ];
+  const box = document.createElement("div");
+  box.style.cssText = "position:fixed;inset:0;z-index:99;overflow-y:auto;background:rgba(4,9,16,0.96);padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start";
+  for (const [nm, fn] of list) {
+    const b = document.createElement("button");
+    b.textContent = nm;
+    b.style.cssText = "padding:14px 6px;font-size:15px;border:1px solid var(--line);border-radius:8px;background:#0c1620";
+    b.onclick = (e) => { e.stopPropagation(); audio.unlock(); fn(); };
+    box.appendChild(b);
+  }
+  document.body.appendChild(box);
+}
 applyQuality();
 applySkin();
 applyEnv(MENU_DEF);
