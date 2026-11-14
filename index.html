@@ -447,7 +447,7 @@ try {
 } catch { /* 壊れていても遊べる */ }
 const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch {} };
 // 番付（ネットのランキング）。預けるのは名前・越えた面の数・端末ごとの乱数IDだけ。つながらなくても遊べる
-const RANK_URL = "";   // 番付サーバーの場所。空なら番付の入口を出さない
+const RANK_URL = "https://takeyari-rank.bamboospear.workers.dev";   // 番付サーバーの場所。空なら番付の入口を出さない
 const rankOn = () => !!RANK_URL && (!DEBUG || location.search.includes("rank"));   // 検証ボットの成績は送らない
 if (!save.uid) save.uid = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
 const rankPost = (path, body) => fetch(RANK_URL + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
