@@ -237,6 +237,7 @@
   #pull.r2 { box-shadow: 0 0 26px rgba(242, 196, 109, 0.6); }
   #gacha-btn { margin-top: 14px; }
   #gacha-btn:disabled { opacity: 0.4; }
+  #askname { background: rgba(4, 9, 16, 0.92); justify-content: center; z-index: 20; }
   .odds { font-size: 11px; color: var(--muted); margin-top: 8px; }
   #rank-open { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 14px; margin: 0; font-size: 17px; padding: 9px 16px; color: var(--gold); border-color: rgba(242, 196, 109, 0.5); letter-spacing: 0.2em; }
   #rank { background: rgba(4, 9, 16, 0.9); justify-content: flex-start; overflow: hidden; }
@@ -374,6 +375,14 @@
 </section>
 
 <!-- 番付（ネットのランキング） -->
+<!-- 最初の出撃の前に 番付に載せる名前を決める -->
+<section id="askname" class="screen" hidden>
+  <div class="rank-title mincho">名前を決める</div>
+  <div class="rank-nm"><input id="ask-name" maxlength="8" placeholder="名前（8文字まで）" autocomplete="off" enterkeyhint="done"><button class="small" id="ask-ok">決定</button></div>
+  <div class="odds">面を越えるたびに番付へ載ります。名前・越えた面の数・端末ごとの乱数IDを送ります</div>
+  <button class="small" id="ask-skip">名前なしで遊ぶ（番付に載らない）</button>
+</section>
+
 <section id="rank" class="screen" hidden>
   <div class="look-head">
     <button class="small" data-action="lookback">← もどる</button>
@@ -3201,6 +3210,7 @@ function endStage(win) {
 const today = () => new Date().toLocaleDateString("sv");   // 端末の日付で YYYY-MM-DD
 let freeUp = false;   // 広告を見たあと、次の強化が1回タダ
 const freeLeft = () => 3 - (save.free.day === today() ? save.free.n : 0);
+let askedName = false;   // 名前を聞くのは1回の起動につき一度だけ
 let tab = "up";       // タイトルの棚: up=強化 / crew=仲間 / look=見た目
 let say = "";
 function refreshShops() {
@@ -3540,9 +3550,15 @@ document.addEventListener("click", (e) => {
     persist(); refreshShops(); audio.ui(); haptic(15);
     return;
   }
+  if (b.id === "ask-ok" || b.id === "ask-skip") {
+    if (b.id === "ask-ok") { save.name = [...$("ask-name").value.normalize("NFKC").replace(/s+/g, " ").trim()].slice(0, 8).join(""); persist(); }
+    askedName = true; $("askname").hidden = true; audio.ui(); startStage(save.stage);
+    return;
+  }
   const a = b.dataset.action;
   if (b.id === "storm") return;   // 竹嵐は押した瞬間に撃つ（下の pointerdown）
   if (a === "start") {
+    if (mode === "menu" && rankOn() && !save.name && !askedName) { $("askname").hidden = false; return; }   // 始める前に名前を決める
     if (mode === "result" && !st.win) startStage(def.n);
     else startStage(save.stage);
   } else if (a === "next") {
