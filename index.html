@@ -3280,7 +3280,7 @@ function updateHUD() {
   sb.style.setProperty("--e", Math.round(energy));
   sb.classList.toggle("ready", energy >= 100 && !st.over);
   // 最初の導き（遊びながら一言ずつ）と、最初の一投を促す指の絵
-  const tx = mode !== "play" || st.over ? "" : save.tut === 0 ? "敵を長押しして、はなす" : save.tut === 1 ? "金色の一瞬ではなすと、貫く" : save.tut === 2 && energy >= 100 ? "「嵐」で一斉投擲" : save.best >= 2 && save.best <= 4 && st.t < 7 ? "狙うと探照灯が照らす。照らした敵は脆い" : "";
+  const tx = mode !== "play" || st.over ? "" : save.tut === 0 ? "敵を長押しして はなす" : save.tut === 1 ? "金色の一瞬ではなすと 貫く" : save.tut === 2 && energy >= 100 ? "「嵐」で一斉投擲" : save.best >= 2 && save.best <= 4 && st.t < 7 ? "狙うと探照灯が照らす。照らした敵は脆い" : "";
   if ($("tip").textContent !== tx) $("tip").textContent = tx;
   const first = save.tut === 0 && mode === "play" && !input.charging ? planes.find((p) => reach(p) && !p.paper) : null;
   const hs = first && screenOf(first.pos);
