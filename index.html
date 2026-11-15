@@ -505,7 +505,8 @@ const ESC = {
   jet: { model: "jet", hp: 2, speed: 3.4, drops: 0, zig: 120, wav: 45 },
   jet2: { model: "jet2", hp: 3.4, speed: 3.0, drops: 2, size: 1.12, zig: 100, wav: 36 }
 };
-const FAR = 900, HIGH = 150;   // 敵はこの距離ぶん奥から、速度を落としながら入ってくる
+const FAR = 900, HIGH = 150;
+const hi = () => (Math.random() < 0.5 ? HIGH : 0);   // 編隊ごとに 高く飛ぶか低く飛ぶかを半々で決める   // 敵はこの距離ぶん奥から、速度を落としながら入ってくる
 const FIRST = Object.keys(GIMMICKS);
 // 31面からは「編隊の組み方」と「天候・武器」をひとつずつ掛け合わせる
 const FORMS = ["column", "vee", "swarm", "mirror", "letters", "zigzag", "basic", "swarm"];
@@ -1945,13 +1946,13 @@ function buildQueue(d) {
   if (g.has("column")) {
     const groups = Math.max(2, Math.round(d.count / 4));
     for (let k = 0; k < groups; k++) {
-      const x = rand(-200, 200), y = rand(130, 220);
+      const x = rand(-200, 200), y = rand(130, 220) + hi();
       for (let i = 0; i < 4; i++) q.push({ at: 1.5 + k * (span / groups) + i * 0.9, x, y: y + i * 14, z: -740 - i * 90 });
     }
   } else if (g.has("vee")) {
     const groups = Math.max(2, Math.round(d.count / 5));
     for (let k = 0; k < groups; k++) {
-      const x = rand(-100, 100), y = rand(140, 200), at = 1.5 + k * (span / groups);
+      const x = rand(-100, 100), y = rand(140, 200) + hi(), at = 1.5 + k * (span / groups);
       for (let i = 0; i < 5; i++) { const w = Math.ceil(i / 2), s = i % 2 ? 1 : -1; q.push({ at, x: x + s * w * 110, y: y + w * 10, z: -720 - w * 95, vx: 0 }); }
     }
   } else if (g.has("letters")) {
@@ -1962,7 +1963,7 @@ function buildQueue(d) {
     const horde = g.has("horde");
     const groups = horde ? 14 : Math.max(3, Math.round(d.count * 0.6)), per = horde ? 6 : 5;
     for (let k = 0; k < groups; k++) {
-      const x = rand(-170, 170), y = rand(130, 230), at = 1.5 + k * ((horde ? 30 : span) / groups);
+      const x = rand(-170, 170), y = rand(130, 230) + hi(), at = 1.5 + k * ((horde ? 30 : span) / groups);
       for (let i = 0; i < per; i++) q.push({ at: at + i * 0.18, x: x + rand(-70, 70), y: y + rand(-40, 40), z: -760 - i * 30, ...small });
     }
   } else if (g.has("mirror")) {
@@ -1983,7 +1984,7 @@ function buildQueue(d) {
   if (g.has("rush") && !g.has("swarm") && !g.has("letters")) {
     const groups = Math.min(7, 4 + Math.floor(d.n / 12));
     for (let k = 0; k < groups; k++) {
-      const x = rand(-170, 170), y = rand(130, 230), at = 3 + k * (span / groups);
+      const x = rand(-170, 170), y = rand(130, 230) + hi(), at = 3 + k * (span / groups);
       for (let i = 0; i < 6; i++) q.push({ at: at + i * 0.16, x: x + rand(-80, 80), y: y + rand(-45, 45), z: -760 - i * 30, ...small });
     }
   }
@@ -2007,7 +2008,7 @@ function spawn(e) {
   const z = e.z ?? rand(-800, -700);
   const halfW = Math.abs(z) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
   const x = e.x ?? rand(-0.7, 0.7) * Math.min(halfW, 420);
-  const y = (e.y ?? (boss ? 230 : paper ? rand(110, 200) : e.dive ? rand(250, 320) : low ? rand(55, 95) : rand(120, 240))) + (low || e.away ? 0 : HIGH);   // HIGH: 画面の上のほうを飛ばすための高さの上乗せ
+  const y = e.y ?? (boss ? 230 : paper ? rand(110, 200) : e.dive ? rand(250, 320) : low ? rand(55, 95) : rand(120, 240)) + (low ? 0 : hi());
   const mesh = paper ? buildPaperPlane() : buildBomber(e.model);
   const armored = !boss && !paper && !e.small && !e.gold && !e.model && (e.armored ?? Math.random() < def.armored);
   const size = (e.size ?? (boss ? 1.9 : armored ? 1.15 : 1)) * (e.model ? 1.25 : 1) * 2.3;
@@ -2028,7 +2029,7 @@ function spawn(e) {
     // 急降下する機体は、頭上に来るころ屋根すれすれまで下りる
     vel: V(e.vx ?? (e.away ? 0 : -x * 0.04), e.dive ? (-(y - 85) * speed) / (Math.abs(z) - 120) : 0, e.away ? -speed * 1.15 : speed),
     drops: e.drops ?? (boss ? 6 : paper || e.away ? 0 : bombStage ? 3 : 1),
-    dropZ: bombStage ? z + rand(60, 160) : rand(-600, -300),
+    dropZ: bombStage ? z + rand(60, 160) : rand(-600, -300) - (y > 260 ? 120 : 0),   // 高い機体は早めに落とす（爆弾が画面の中を落ちていくように）
     falling: false, fallT: 0, roll: 0, rollDir: 1, smokeT: 0, ph: Math.random() * 10,
     flash: 0, jolt: 0, stuck: null, stuckOff: null, dead: false, gone: false, age: 0, strafeN: 3, strafeT: 0
   };
@@ -2041,7 +2042,7 @@ const bombGeo = (() => { const g = new THREE.CapsuleGeometry(1.8, 5.5, 3, 6); re
 const bombMat = new THREE.MeshLambertMaterial({ color: 0x3a3f44, emissive: 0x4a1408, flatShading: true });
 function dropBomb(p, child = null) {
   const mesh = new THREE.Mesh(bombGeo, bombMat);
-  if (child) mesh.scale.setScalar(0.7);
+  mesh.scale.setScalar(child ? 1 : 1.5);
   scene.add(mesh);
   bombs.push({
     mesh, bomb: true, dead: false, trailT: 0, split: !child && def.g.has("split"),
@@ -2669,7 +2670,7 @@ function update(dt, real) {
     b.mesh.lookAt(tmpV2.copy(b.pos).add(b.vel));
     b.mesh.rotateX(Math.PI / 2);
     b.trailT -= dt;
-    if (b.trailT <= 0) { b.trailT = 0.04; fx.emit(b.pos, V(0, 8, 0), COL.red, 11, 0.22, { drag: 1 }); }
+    if (b.trailT <= 0) { b.trailT = 0.02; fx.emit(b.pos, V(0, 8, 0), COL.red, 15, 0.3, { drag: 1 }); }
     if (b.split && b.vel.y < -58) {
       // 空中で三つに割れる
       b.dead = true;
@@ -2677,7 +2678,7 @@ function update(dt, real) {
       for (const sx of [-1, 0, 1]) dropBomb(b, V(sx * 30, 14, rand(-10, 10)));
       continue;
     }
-    if (b.pos.y < GROUND_Y + 2) { b.dead = true; st.landed++; damageCity(def.g.has("bombs") ? (b.mesh.scale.x < 1 ? 4 : 7) : 9, b.pos); }
+    if (b.pos.y < GROUND_Y + 2) { b.dead = true; st.landed++; damageCity(def.g.has("bombs") ? (b.mesh.scale.x < 1.2 ? 4 : 7) : 9, b.pos); }
   }
 
   for (const s of spears) {
