@@ -206,7 +206,12 @@
   #shop-say { width: min(340px, 100%); margin-top: 8px; font-size: 14px; color: var(--paper); min-height: 20px; }
   #look-shop { width: min(340px, 100%); }
   #look-shop .lab { text-align: left; font-size: 13px; color: var(--gold); margin: 8px 2px 4px; letter-spacing: 0.2em; }
-  .looks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .looks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .looks button.p { border-style: dashed; }
+  .looks .big { display: block; font-size: 26px; font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif; }
+  .gem { display: inline-block; width: 0.72em; height: 0.72em; transform: rotate(45deg); background: linear-gradient(135deg, #e8fbff, #6ab8f2 55%, #2a62c8); margin: 0 0.42em 0 0.3em; vertical-align: 0.02em; border-radius: 2px; box-shadow: 0 0 8px rgba(120, 190, 255, 0.8); }
+  #pgacha-btn { margin-top: 8px; background: linear-gradient(135deg, #cfe8ff, #7ab4f2); box-shadow: 0 8px 30px rgba(120, 180, 255, 0.35); }
+  #pgacha-btn:disabled { opacity: 0.4; }
   .looks button { padding: 5px 2px; border: 1px solid var(--line); border-radius: 8px; background: rgba(10, 22, 30, 0.85); line-height: 1.25; }
   .looks button i { display: block; height: 7px; width: 70%; margin: 2px auto 3px; border-radius: 4px; }
   .looks button .nm { display: block; font-size: 13px; color: var(--paper); }
@@ -226,6 +231,8 @@
   .look-head { display: flex; justify-content: space-between; align-items: center; width: min(340px, 100%); }
   .look-head .small { margin: 0; }
   .tabs.center { margin: 14px 0 12px; }
+  .tabs.center .tab { white-space: nowrap; padding: 7px 11px; }
+  #look-count { white-space: nowrap; }
   #look-count { margin-left: auto; font-size: 13px; color: var(--muted); }
   #look-grid { width: min(340px, 100%); }
   #look-prev { width: min(340px, 100%); height: 150px; flex: none; border: 1px solid var(--line); border-radius: 12px; background: radial-gradient(ellipse at 50% 70%, rgba(70, 100, 140, 0.55), rgba(8, 16, 26, 0.92)); margin-bottom: 10px; }
@@ -237,6 +244,17 @@
   #pull.r2 { box-shadow: 0 0 26px rgba(242, 196, 109, 0.6); }
   #gacha-btn { margin-top: 14px; }
   #gacha-btn:disabled { opacity: 0.4; }
+  #unlock { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, rgba(40, 30, 10, 0.86), rgba(2, 5, 10, 0.96)); overflow: hidden; }
+  #unlock[hidden] { display: none; }
+  #unlock .rays { position: absolute; width: 200vmax; height: 200vmax; background: repeating-conic-gradient(rgba(242, 196, 109, 0.22) 0 9deg, transparent 9deg 18deg); animation: rays 9s linear infinite; }
+  @keyframes rays { to { transform: rotate(360deg); } }
+  #unlock .ub { position: relative; text-align: center; padding: 0 16px; }
+  #unlock .ub.in { animation: ubin 0.55s cubic-bezier(.2, 1.7, .4, 1); }
+  @keyframes ubin { from { transform: scale(0.2) rotate(-8deg); opacity: 0; } }
+  #unlock small { display: block; font-size: 18px; letter-spacing: 0.5em; color: var(--gold); margin-bottom: 8px; }
+  #unlock b { display: block; font-size: min(72px, 17vw); line-height: 1.15; color: var(--paper); text-shadow: 0 0 30px rgba(242, 196, 109, 0.9), 0 6px 30px #000; white-space: nowrap; }
+  #unlock span { display: block; font-size: 16px; color: var(--paper); margin-top: 12px; }
+  #unlock em { display: block; font-style: normal; font-size: 12px; color: var(--muted); margin-top: 26px; }
   #askname { background: rgba(4, 9, 16, 0.92); justify-content: center; z-index: 20; }
   .odds { font-size: 11px; color: var(--muted); margin-top: 8px; }
   #rank-open { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 14px; margin: 0; font-size: 17px; padding: 9px 16px; color: var(--gold); border-color: rgba(242, 196, 109, 0.5); letter-spacing: 0.2em; }
@@ -348,6 +366,7 @@
   <div id="res-road" class="mincho" hidden></div>
   <button class="reward" id="res-double" data-action="double"><svg class="ic"><use href="#i-play"/></svg> 広告で <span class="coin"></span>×2</button>
   <button class="reward" id="res-revive" data-action="revive"><svg class="ic"><use href="#i-play"/></svg> 広告で 復活</button>
+  <button class="reward" id="res-chest" data-action="chest" hidden><svg class="ic"><use href="#i-play"/></svg> 広告で 宝箱を開ける</button>
   <div class="wallet mono" id="res-wallet"></div>
   <div class="shop" data-shop></div>
   <button class="primary" id="res-next" data-action="next">次へ <svg class="ic"><use href="#i-play"/></svg></button>
@@ -366,12 +385,16 @@
     <button class="tile" data-tab="crew"><b>仲間</b><small data-tile="crew"></small></button>
     <button class="tile" data-tab="look"><b>スキン</b><small data-tile="look"></small></button>
   </div>
-  <div class="tabs center"><button class="tab" data-look="spear">竹槍</button><button class="tab" data-look="crew">人々</button><span id="look-count" class="mono"></span></div>
+  <div class="tabs center"><button class="tab" data-look="spear">竹槍</button><button class="tab" data-look="crew">人々</button><button class="tab" data-look="charm">縁起物</button><span id="look-count" class="mono"></span></div>
   <canvas id="look-prev"></canvas>
   <div id="look-grid" class="looks"></div>
   <div id="pull" hidden></div>
   <button class="primary" id="gacha-btn"></button>
-  <div class="odds">並 60%　上 30%　極 10%　／　かぶったら4割戻る</div>
+  <div class="odds" id="odds1">並 60%　上 30%　極 10%　／　かぶったら4割戻る</div>
+  <button class="primary" id="pgacha-btn"></button>
+  <div class="odds" id="odds2">宝珠のくじ: 点線の枠の9種だけが 同じ確率で出る　／　かぶったら宝珠2が戻る</div>
+  <button class="reward slim" id="gem-ad" data-action="gemad"><svg class="ic"><use href="#i-play"/></svg> 広告で <span class="gem"></span>+1 <span class="mono" id="gem-left"></span></button>
+  <div class="odds" id="odds3" hidden>縁起物は 何戦かに一度 結果の画面に出る宝箱から出る。1つにつき銭 +2%</div>
 </section>
 
 <!-- 番付（ネットのランキング） -->
@@ -382,6 +405,9 @@
   <div class="odds">面を越えるたびに番付へ載ります。名前・越えた面の数・端末ごとの乱数IDを送ります</div>
   <button class="small" id="ask-skip">名前なしで遊ぶ（番付に載らない）</button>
 </section>
+
+<!-- 解放の演出。画面いっぱいに光が回り 手に入れたものを大きく見せる。押すと次へ -->
+<div id="unlock" hidden><div class="rays"></div><div class="ub"><small></small><b class="mincho"></b><span></span><em>押してつぎへ</em></div></div>
 
 <section id="rank" class="screen" hidden>
   <div class="look-head">
@@ -424,6 +450,7 @@ const DEBUG = location.search.includes("debug");
 const G = 300;            // 竹槍の重力
 const GROUND_Y = -90;     // 街の地面
 const COIN = '<span class="coin"></span>';
+const GEM = '<span class="gem"></span>';   // 宝珠（めったに手に入らない通貨）
 // 指の真下を狙う（ずらすと「指と照準が合わない」と実機で不評だった）。溜めの輪は親指より大きく描いて隠れないようにする
 const aimOffset = () => 0;
 
@@ -441,7 +468,8 @@ const save = {
   coins: 0, stage: 1, best: 1, up: {}, fails: {}, stars: {},
   opt: { sound: true, vibe: true }, tut: 0, road: 0, skin: 0, cskin: 0,
   crew: {}, team: [], own: { spear: [0], crew: [0] }, name: "", uid: "",
-  last: 0, day: "", streak: 0, gift2: "", free: { day: "", n: 0 }
+  last: 0, day: "", streak: 0, gift2: "", free: { day: "", n: 0 },
+  gem: 0, plays: 0, bonus: 0, charms: [], gemad: { day: "", n: 0 }   // 宝珠 遊んだ回数 ごほうびの進み 縁起物 宝珠の広告の回数
 };
 for (const u of UPS) save.up[u.id] = 0;
 try {
@@ -453,7 +481,7 @@ try {
   if (s.fails && typeof s.fails === "object") save.fails = s.fails;
   if (s.stars && typeof s.stars === "object") save.stars = s.stars;
   if (s.opt && typeof s.opt === "object") { save.opt.sound = s.opt.sound !== false; save.opt.vibe = s.opt.vibe !== false; }
-  for (const k of ["tut", "road", "skin", "last", "streak"]) if (Number.isFinite(s[k])) save[k] = Math.max(0, Math.floor(s[k]));
+  for (const k of ["tut", "road", "skin", "last", "streak", "gem", "plays", "bonus"]) if (Number.isFinite(s[k])) save[k] = Math.max(0, Math.floor(s[k]));
   for (const k of ["day", "gift2"]) if (typeof s[k] === "string") save[k] = s[k];
   if (typeof s.free?.day === "string" && Number.isFinite(s.free.n)) save.free = { day: s.free.day, n: s.free.n };
   // 仲間と見た目。古い保存（「援」の強化、道でもらった竹槍の色）は引き継ぐ
@@ -461,9 +489,11 @@ try {
   if (s.crew && typeof s.crew === "object") { for (const k of ["grandma", "grandpa", "kid", "fire", "monk", "pilot"]) if (Number.isFinite(s.crew[k]) && s.crew[k] > 0) save.crew[k] = Math.floor(s.crew[k]); }
   else if (s.up?.allies > 0) { save.crew.grandma = Math.floor(s.up.allies); if (s.up.allies >= 4) save.crew.grandpa = Math.floor(s.up.allies) - 3; }
   save.team = Array.isArray(s.team) ? [...new Set(s.team.filter((k) => save.crew[k] > 0))].slice(0, 4) : Object.keys(save.crew).slice(0, 3);
-  if (s.own && typeof s.own === "object") { save.own.spear = [...new Set([0, ...ints(s.own.spear, 10)])]; save.own.crew = [...new Set([0, ...ints(s.own.crew, 8)])]; }
+  if (s.own && typeof s.own === "object") { save.own.spear = [...new Set([0, ...ints(s.own.spear, 30)])]; save.own.crew = [...new Set([0, ...ints(s.own.crew, 24)])]; }
   else if (save.skin > 0) { save.skin = save.skin >= 3 ? 7 : save.skin; save.own.spear = [0, 1, 2, 7].filter((i) => i <= save.skin); }
   if (Number.isFinite(s.cskin)) save.cskin = Math.floor(s.cskin);
+  save.charms = ints(s.charms, 24);
+  if (typeof s.gemad?.day === "string" && Number.isFinite(s.gemad.n)) save.gemad = { day: s.gemad.day, n: s.gemad.n };
   if (typeof s.name === "string") save.name = [...s.name].slice(0, 8).join("");
   if (typeof s.uid === "string" && /^[a-f0-9]{32}$/.test(s.uid)) save.uid = s.uid;
   if (!save.own.spear.includes(save.skin)) save.skin = 0;
@@ -505,7 +535,7 @@ const chargeK = () => Math.pow(0.97, L("breath"));
 const perfectWin = () => { const k = chargeK(); const a = 0.5 * k; return [a, a + 0.3 * k + 0.018 * L("breath")]; };
 const chargeFull = () => 0.75 * chargeK();
 const cityMax = () => 100 + L("city") * 12;
-const coinMul = () => 1 + 0.1 * L("coin");
+const coinMul = () => (1 + 0.1 * L("coin")) * (1 + 0.02 * save.charms.length);   // 縁起物は1つにつき銭 +2%
 const assistR = () => 85 + 5 * L("breath");
 const upCost = (u) => Math.round(u.base * Math.pow(1.32, L(u.id)));
 
@@ -1362,8 +1392,15 @@ const CREW = [
 ];
 const crewLv = (id) => save.crew[id] || 0;
 // 棚の下に出す一言。飛行兵は、いま呼べる機種と次の機種も添える
+// 飛行兵の機種と同じように ほかの仲間も育てると段階が上がり 見た目と特技が変わる
+const TIER_AT = [1, 5, 10, 16, 23];
+const TIERS = {
+  grandma: ["竹槍", "二本投げ", "薙刀", "三本投げ", "鬼婆"], grandpa: ["重い一投", "剛力", "丸太投げ", "大丸太", "仁王"],
+  kid: ["石ころ", "パチンコ", "二丁パチンコ", "早撃ち", "神童"], fire: ["バケツ", "手押しポンプ", "放水", "大放水", "纏持ち"], monk: ["鐘", "大鐘", "読経", "梵鐘", "生き仏"]
+};
+const crewTier = (lv) => Math.max(0, TIER_AT.filter((x) => lv >= x).length - 1);
 function crewSay(c) {
-  if (c.id !== "pilot") return `${c.nm}　${c.say}`;
+  if (c.id !== "pilot") { const t = crewTier(Math.max(1, crewLv(c.id))); return `${c.nm}　${TIERS[c.id][t]}${t < 4 ? `（Lv${TIER_AT[t + 1]}で${TIERS[c.id][t + 1]}）` : ""}`; }
   const lv = Math.max(1, crewLv("pilot")), t = friendTier(lv), nx = FRIENDS[t + 1];
   return `飛行兵　${FRIENDS[t].nm} ${friendCount(lv)}機${nx ? `（Lv${nx.lv}で${nx.nm}）` : ""}`;
 }
@@ -1371,10 +1408,21 @@ const crewUpCost = (c) => Math.round(c.cost * 0.6 * Math.pow(1.25, crewLv(c.id))
 const teamSlots = () => (save.best > 25 ? 4 : 3);
 // 人々の見た目（銭で買って、全員まとめて着替える）
 const CSKINS = [
-  { nm: "普段着", r: 0, pat: "kasuri" }, { nm: "防空頭巾", r: 0, cloth: 0x2c3550, head: "hood", pat: "kasuri", ink: 0xc8d0e4 },
-  { nm: "割烹着", r: 0, cloth: 0xece6d6, pat: "pin", ink: 0xcfc6ae, legs: 0x2c3550 }, { nm: "学生服", r: 0, cloth: 0x1c1e26, legs: 0x16181e },
-  { nm: "祭り", r: 1, cloth: 0x1f4fa0, head: "band", hem: true, pat: "check", ink: 0x173c7c, legs: 0xf2ede0 }, { nm: "紅白", r: 1, cloth: 0xc8322a, head: "band", hem: true, pat: "stripe", ink: 0xf2ede0, legs: 0xf2ede0 },
-  { nm: "忍び", r: 2, cloth: 0x2a1e3a, head: "hood", pat: "mesh", ink: 0x6e5c92, legs: 0x1c1428 }, { nm: "金ぴか", r: 2, cloth: 0xe0b040, glow: 0x5a4000, head: "band", pat: "scale", ink: 0x9a6c14, legs: 0xb88a28 }
+  { nm: "普段着", r: 0, pat: "kasuri" }, { nm: "防空頭巾", r: 0, cloth: 0x2c3550, head: "hood", pat: "kasuri", ink: 0xc8d0e4, kit: "bag" },
+  { nm: "割烹着", r: 0, cloth: 0xece6d6, pat: "pin", ink: 0xcfc6ae, legs: 0x2c3550, kit: "apron" }, { nm: "学生服", r: 0, cloth: 0x1c1e26, legs: 0x16181e, kit: "cap" },
+  { nm: "祭り", r: 1, cloth: 0x1f4fa0, head: "band", hem: true, pat: "check", ink: 0x173c7c, legs: 0xf2ede0, kit: "happi" }, { nm: "紅白", r: 1, cloth: 0xc8322a, head: "band", hem: true, pat: "stripe", ink: 0xf2ede0, legs: 0xf2ede0, kit: "rope" },
+  { nm: "忍び", r: 2, cloth: 0x2a1e3a, head: "hood", pat: "mesh", ink: 0x6e5c92, legs: 0x1c1428, kit: "ninja" }, { nm: "金ぴか", r: 2, cloth: 0xe0b040, glow: 0x5a4000, head: "band", pat: "scale", ink: 0x9a6c14, legs: 0xb88a28, kit: "king" },
+  // ここから追加ぶん。p: true は宝珠のくじでしか出ない
+  { nm: "作業着", r: 0, cloth: 0x5a6a7a, pat: "pin", ink: 0x46546a, kit: "bag" }, { nm: "国民服", r: 0, cloth: 0x7a7448, legs: 0x6a6440, kit: "cap" },
+  { nm: "野良着", r: 0, cloth: 0x34406a, pat: "kasuri", ink: 0xb8c0d8, head: "band" }, { nm: "半纏", r: 0, cloth: 0x7a2a2a, pat: "check", ink: 0x5e1e1e, hem: true },
+  { nm: "浴衣", r: 0, cloth: 0xe8ecf2, pat: "stripe", ink: 0x3a5aa0, legs: 0xe8ecf2, hem: true }, { nm: "縞もんぺ", r: 0, cloth: 0x6a4a3a, pat: "stripe", ink: 0x4a3226, kit: "apron" },
+  { nm: "火消し", r: 1, cloth: 0x1a1c22, pat: "check", ink: 0x2e323c, head: "band", legs: 0x1a1c22, kit: "happi" }, { nm: "巫女", r: 1, cloth: 0xf2ede0, legs: 0xc8322a, head: "band", kit: "rope" },
+  { nm: "山伏", r: 1, cloth: 0xe8dcc0, pat: "pin", ink: 0xc8a868, legs: 0xd87a2a, head: "hood", hoodc: 0xd87a2a, kit: "bag" }, { nm: "行商", r: 1, cloth: 0x3a6a4a, pat: "stripe", ink: 0x2a5238, head: "band", kit: "bag" },
+  { nm: "車夫", r: 1, cloth: 0x22305a, legs: 0xf2ede0, head: "band", hem: true, kit: "happi" }, { nm: "書生", r: 1, cloth: 0x6a5236, pat: "kasuri", ink: 0x8a7252, legs: 0x2c3550, kit: "cap" },
+  { nm: "白忍び", r: 2, p: true, cloth: 0xe8ecf0, pat: "mesh", ink: 0xb0b8c4, legs: 0xd8dce4, head: "hood", hoodc: 0xd8dce4, kit: "ninja" },
+  { nm: "赤備え", r: 2, p: true, cloth: 0xb0241c, pat: "scale", ink: 0x7a140e, legs: 0x8a1c14, glow: 0x3a0806, head: "band", kit: "king" },
+  { nm: "銀ぴか", r: 2, p: true, cloth: 0xc8ced8, pat: "scale", ink: 0x8a929e, legs: 0xa8aeb8, glow: 0x30343a, head: "band", kit: "king" },
+  { nm: "桜吹雪", r: 2, p: true, cloth: 0xf2a8c4, pat: "check", ink: 0xe88aae, legs: 0xf2ede0, glow: 0x3a1424, head: "band", hem: true, kit: "rope" }
 ];
 const skinMat = new THREE.MeshLambertMaterial({ color: 0xe2c19c });
 const L_ = (hex, extra = {}) => new THREE.MeshLambertMaterial({ color: hex, ...extra });
@@ -1401,7 +1449,7 @@ function clothMat(sk, base) {
   })());
   return new THREE.MeshLambertMaterial({ map: tex, emissive: sk.glow || 0 });
 }
-function buildPerson(kind, ski = save.cskin) {
+function buildPerson(kind, ski = save.cskin, tier = 0) {
   // 人は空を向いて立つので、こちらから見えるのは背中。背中で誰だか分かるように作る
   const g = new THREE.Group();
   const sk = CSKINS[ski] || CSKINS[0];
@@ -1434,8 +1482,8 @@ function buildPerson(kind, ski = save.cskin) {
   };
   const hair = kind === "grandma" || kind === "grandpa" ? 0xd4d4d4 : 0x17171a;
   if (sk.head === "hood") {
-    cap(1.06, sk.r === 2 ? 0x1a1226 : 0x6b6250, 5.95, 0.7);
-    add(new THREE.CylinderGeometry(0.95, 1.2, 0.9, 8), L_(sk.r === 2 ? 0x1a1226 : 0x6b6250, { flatShading: true }), 0, 5.2, -0.05);   // 肩にかかる垂れ
+    cap(1.06, (sk.hoodc ?? (sk.r === 2 ? 0x1a1226 : 0x6b6250)), 5.95, 0.7);
+    add(new THREE.CylinderGeometry(0.95, 1.2, 0.9, 8), L_((sk.hoodc ?? (sk.r === 2 ? 0x1a1226 : 0x6b6250)), { flatShading: true }), 0, 5.2, -0.05);   // 肩にかかる垂れ
   } else {
     if (kind === "monk") { /* 剃髪 */ }
     else if (kind === "fire") { cap(0.98, 0x23272e, 6.02, 0.5); add(new THREE.CylinderGeometry(1.2, 1.25, 0.12, 12), L_(0x23272e), 0, 6.05, 0); }
@@ -1456,7 +1504,7 @@ function buildPerson(kind, ski = save.cskin) {
   if (sk.hem) add(new THREE.CylinderGeometry(1.0, 1.0, 0.3, 8), white, 0, 3.0, 0).scale.z = 0.7;
   // 見た目ごとの小物（背中から見て分かるものを足す）
   const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), two = (hex) => L_(hex, { side: THREE.DoubleSide }), flat = (hex) => new THREE.MeshBasicMaterial({ color: hex });
-  if (sk.nm === "防空頭巾") {   // 斜めがけの雑嚢
+  if (sk.kit === "bag") {   // 斜めがけの雑嚢
     add(B(0.22, 3.3, 0.1), L_(0x8c7a56), 0, 4.0, -0.7, 0, 0.75);
     add(B(1.0, 0.9, 0.45), L_(0x8c7a56), -1.0, 2.7, -0.4);
     add(B(1.04, 0.3, 0.5), L_(0x6b5c3e), -1.0, 3.05, -0.4);
@@ -1465,7 +1513,7 @@ function buildPerson(kind, ski = save.cskin) {
     add(new THREE.CylinderGeometry(0.34, 0.34, 0.9, 8), L_(0x55606a), 1.0, 2.6, -0.35);       // 水筒
     for (const d of [-1, 1]) for (const y of [0.6, 1.0]) add(new THREE.TorusGeometry(0.4, 0.06, 4, 10), L_(0x8c7a56), d * 0.48, y, 0, Math.PI / 2);   // 巻き脚絆
   }
-  if (sk.nm === "割烹着") {   // 白い三角巾と 背中で結んだひも
+  if (sk.kit === "apron") {   // 白い三角巾と 背中で結んだひも
     cap(0.97, 0xf2ede0, 5.98, 0.56, -0.02);
     add(B(0.7, 0.4, 0.1), white, 0, 6.0, -0.98, 0.5);
     for (const d of [-1, 1]) { add(B(0.75, 0.36, 0.12), white, d * 0.42, 3.05, -0.72, 0, d * 0.5); add(B(0.16, 1.1, 0.08), white, d * 0.16, 2.4, -0.72, 0, d * 0.12); }
@@ -1474,7 +1522,7 @@ function buildPerson(kind, ski = save.cskin) {
     for (const d of [-1, 1]) add(new THREE.TorusGeometry(0.33, 0.07, 4, 10), L_(0xd8d2c0), d * 1.14, 3.0, 0, Math.PI / 2);   // そで口のゴム
     add(new THREE.CylinderGeometry(0.1, 0.1, 2.2, 5), L_(0x8a6a44), -1.5, 3.2, 0.3, 0.2, 0.25);              // しゃもじ代わりの すりこぎ
   }
-  if (sk.nm === "学生服") {   // 学帽と 斜めがけの鞄
+  if (sk.kit === "cap") {   // 学帽と 斜めがけの鞄
     cap(0.95, 0x14161c, 6.0, 0.5);
     add(new THREE.CylinderGeometry(1.0, 1.0, 0.16, 12), L_(0x14161c), 0, 6.03, 0);
     add(new THREE.TorusGeometry(0.95, 0.06, 5, 14), L_(0xd8b23a), 0, 6.14, 0, Math.PI / 2);
@@ -1485,7 +1533,7 @@ function buildPerson(kind, ski = save.cskin) {
     add(B(0.9, 0.08, 0.5), L_(0x14161c), 0, 6.02, 1.1);                                                       // 帽子のつば
     for (const d of [-1, 1]) add(new THREE.TorusGeometry(0.4, 0.06, 4, 10), white, d * 0.48, 0.55, 0, Math.PI / 2);   // 白い脚絆
   }
-  if (sk.nm === "祭り") {   // 法被の背の大紋と 白いえり
+  if (sk.kit === "happi") {   // 法被の背の大紋と 白いえり
     add(new THREE.CircleGeometry(0.78, 18), L_(0xf2ede0), 0, 4.0, -0.69).rotation.y = Math.PI;
     add(new THREE.CircleGeometry(0.5, 18), L_(0xc8322a), 0, 4.0, -0.7).rotation.y = Math.PI;
     add(new THREE.CircleGeometry(0.22, 12), L_(0xf2ede0), 0, 4.0, -0.71).rotation.y = Math.PI;
@@ -1496,7 +1544,7 @@ function buildPerson(kind, ski = save.cskin) {
     add(new THREE.ConeGeometry(0.5, 0.5, 4), L_(0xc8322a), 0.55, 6.75, -0.3, 0.3);                           // ねじり鉢巻きの飾り
     for (const d of [-1, 1]) add(B(0.5, 0.12, 1.0), L_(0xd8c48a), d * 0.48, 0.06, 0.15);                     // わらじ
   }
-  if (sk.nm === "紅白") {   // 白いしめ縄の帯と たすき
+  if (sk.kit === "rope") {   // 白いしめ縄の帯と たすき
     add(new THREE.TorusGeometry(1.0, 0.2, 6, 16), white, 0, 2.75, 0, Math.PI / 2).scale.y = 0.7;
     add(B(0.26, 3.2, 0.1), white, 0, 4.0, -0.7, 0, 0.8);
     add(B(0.26, 3.2, 0.1), white, 0, 4.0, -0.71, 0, -0.8);
@@ -1505,7 +1553,7 @@ function buildPerson(kind, ski = save.cskin) {
     for (const d of [-1, 1]) add(new THREE.TorusGeometry(0.33, 0.1, 5, 10), white, d * 1.14, 3.6, 0, Math.PI / 2);   // 白い手甲
     add(new THREE.SphereGeometry(0.34, 8, 6), L_(0xc8322a), 0, 6.95, 0);                                     // 頭のてっぺんの赤い房
   }
-  if (sk.nm === "忍び") {   // 背負った刀と 赤い襟巻き
+  if (sk.kit === "ninja") {   // 背負った刀と 赤い襟巻き
     add(B(0.16, 3.7, 0.16), L_(0x15151a), 0, 4.3, -0.82, 0, 0.7);
     add(B(0.22, 1.0, 0.22), L_(0x8a1f1a), -1.42, 5.98, -0.82, 0, 0.7);
     add(B(0.7, 0.1, 0.34), L_(0xd8b23a), -1.12, 5.62, -0.82, 0, 0.7);
@@ -1517,7 +1565,7 @@ function buildPerson(kind, ski = save.cskin) {
     { const st = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.06, 4), L_(0xaab2ba, { emissive: 0x2a2e34 })); st.position.set(0.95, 2.75, -0.6); st.rotation.x = Math.PI / 2; g.add(st); }   // 帯の手裏剣
     add(B(0.5, 0.5, 0.3), L_(0x15151a), -0.9, 2.75, -0.5);                                                   // 腰の道具袋
   }
-  if (sk.nm === "金ぴか") {   // 赤い外套と 頭上の光の輪
+  if (sk.kit === "king") {   // 赤い外套と 頭上の光の輪
     add(new THREE.PlaneGeometry(2.4, 3.6), two(0xb0241c), 0, 3.5, -0.9, 0.14);
     add(B(2.5, 0.3, 0.2), L_(0xf2d27a, { emissive: 0x5a4000 }), 0, 5.2, -0.6);
     add(new THREE.TorusGeometry(0.72, 0.07, 5, 18), flat(0xffe9a0), 0, 7.25, 0, Math.PI / 2);
@@ -1528,6 +1576,12 @@ function buildPerson(kind, ski = save.cskin) {
     add(new THREE.CylinderGeometry(1.0, 1.0, 0.36, 8), L_(0xb0241c), 0, 2.74, 0).scale.z = 0.7;              // 赤い帯
     add(new THREE.SphereGeometry(0.26, 8, 6), L_(0xf2d27a, { emissive: 0x5a4000 }), 0, 2.74, 0.72);
   }
+  // 段階の印: 鉢巻き → たすき → 肩当て → 足もとの光の輪
+  if (tier >= 1 && sk.head !== "hood") band(tier >= 3 ? 0xc8322a : 0xf4f0e8);
+  if (tier >= 2) for (const d of [-1, 1]) add(B(0.2, 3.2, 0.08), L_(tier >= 4 ? 0xe8c050 : tier >= 3 ? 0xc8322a : 0xf2ede0), 0, 4.0, -0.74 - 0.01 * d, 0, d * 0.8);
+  if (tier >= 3) for (const d of [-1, 1]) add(new THREE.SphereGeometry(0.42, 8, 6), L_(0x3a4048, { emissive: 0x101216 }), d * 1.2, 4.95, 0);
+  if (tier >= 4) add(new THREE.TorusGeometry(1.6, 0.08, 5, 24), flat(0xffe9a0), 0, 0.15, 0, Math.PI / 2);
+  if (kind === "fire" && tier >= 1) { add(B(1.7, 1.2, 1.0), L_(0xb0241c), -2.4, 0.6, 0); add(new THREE.CylinderGeometry(0.1, 0.1, 1.6 + tier * 0.3, 5), L_(0x2a2420), -2.4, 1.8, 0); }   // 手押しポンプ
   // 左腕は下げ、右腕は肩から振る
   add(new THREE.CylinderGeometry(0.3, 0.26, 2.3, 6), cm, -1.12, 3.8, 0, 0, -0.12);
   add(new THREE.SphereGeometry(0.28, 6, 5), skinMat, -1.26, 2.55, 0);
@@ -1555,6 +1609,10 @@ function buildPerson(kind, ski = save.cskin) {
     g.userData.bell = bell;
   }
   if (kind === "kid") g.scale.setScalar(0.72);
+  if (kind === "grandma" && tier >= 2) { const bl = new THREE.Mesh(B(0.2, 1.3, 6.5), L_(0xc8ced8, { emissive: 0x2a2e34 })); bl.position.set(0, 0.5, 15.5); held.add(bl); }   // 薙刀の刃
+  if (kind === "grandpa") held.scale.multiplyScalar(1 + 0.2 * tier);                      // だんだん太い丸太に
+  if (kind === "kid") held.scale.multiplyScalar(1 + 0.35 * tier);
+  if (kind === "monk") { g.userData.bell.scale.setScalar(1 + 0.12 * tier); if (tier >= 4) g.userData.bell.material = L_(0xe8c050, { emissive: 0x5a4000 }); }
   g.userData.arm = arm;
   g.userData.spear = held;
   g.userData.thrower = kind === "grandma" || kind === "grandpa" || kind === "chonai";
@@ -1576,7 +1634,8 @@ function rebuildAllies(trial = null) {
     const box = new THREE.Mesh(new THREE.BoxGeometry(16, 30, 10), new THREE.MeshLambertMaterial({ color: 0x15191d }));
     box.position.y = -15.6;
     root.add(box);
-    const person = buildPerson(kind);
+    const tr = kind === "pilot" || kind === "chonai" ? 0 : crewTier(lv);
+    const person = buildPerson(kind, save.cskin, tr);
     person.scale.multiplyScalar(1.3);
     const rotY = Math.PI + (spot.x < 0 ? 0.35 : -0.35);   // 空に向かって
     person.rotation.y = rotY;
@@ -1593,6 +1652,12 @@ function rebuildAllies(trial = null) {
       pilot: { interval: 3, dmg: 0 },
       chonai: { interval: 5.5, dmg: 1 }
     }[kind];
+    // 段階ごとの上乗せ
+    if (kind === "grandma") { spec.dmg *= 1 + 0.15 * tr; spec.shots = 1 + (tr >= 1 ? 1 : 0) + (tr >= 3 ? 1 : 0); }
+    if (kind === "grandpa") { spec.dmg *= 1 + 0.3 * tr; spec.big = 1 + 0.25 * tr; }
+    if (kind === "kid") { spec.interval *= Math.pow(0.85, tr); spec.shots = 1 + (tr >= 2 ? 1 : 0); }
+    if (kind === "fire") { spec.regen *= 1 + 0.4 * tr; spec.douse = tr >= 2; }
+    if (kind === "monk") { spec.dmg *= 1 + 0.35 * tr; spec.interval *= Math.pow(0.92, tr); }
     const maxHp = 2 + Math.floor(lv / 15);   // 何回狙われたら退避するか
     allies.push({ kind, lv, root, person, rotY, side: spot.x < 0 ? 1 : -1, p: 0,   // side: 退避で駆けていく向き（画面の中央寄り）
        timer: rand(0.5, 2), swing: 0, hp: maxHp, maxHp, out: false, duck: 0, btn: null, ...spec });
@@ -1665,6 +1730,7 @@ function updateAllies(dt) {
     if (a.kind === "fire") {
       a.swing = 1;
       for (let k = 0; k < 10; k++) fx.emit(top, V(rand(-14, 14), rand(30, 70), rand(-50, -10)), COL.cyan, 3, 0.7, { drag: 0.4, grav: 130 });
+      if (a.douse) { const b = bombs.find((x) => !x.dead); if (b) { b.dead = true; st.stopped++; sparks(b.pos, 12); for (let k = 1; k <= 10; k++) fx.emit(tmpV2.copy(top).lerp(b.pos, k / 10), ZERO, COL.cyan, 4, 0.3, { drag: 0 }); } }   // 放水で落下弾を1つ消す
       continue;
     }
     if (a.kind === "pilot") { a.swing = 1; continue; }
@@ -1687,10 +1753,11 @@ function updateAllies(dt) {
       haptic(20);
       continue;
     }
-    const t = (a.kind === "kid" && bombs.find((b) => !b.dead)) || ts[0];
-    if (!t) continue;
+    const pool = a.kind === "kid" ? [...bombs.filter((b) => !b.dead), ...ts] : ts;
+    if (!pool.length) continue;
     a.swing = 1;
-    throwSpear(0, 0, 1, false, { ally: true, start: top, target: t, dmg: a.dmg, pebble: a.kind === "kid" });
+    const n = a.shots || 1;
+    for (let k = 0; k < n; k++) throwSpear(0, 0, 1, false, { ally: true, start: top.clone().add(V((k - (n - 1) / 2) * 3, 0, 0)), target: pool[k % pool.length], dmg: a.dmg, pebble: a.kind === "kid", big: a.big });
   }
 }
 
@@ -2011,6 +2078,7 @@ const audio = (() => {
     pop() { hiss(0.25, 0.2, 3000, 8000, "highpass"); tone(1200, 400, 0.2, 0.04, "triangle"); },
     storm() { hiss(0.9, 0.3, 400, 5000, "bandpass"); [392, 523, 659, 784].forEach((f, i) => tone(f, f * 1.5, 0.3, 0.06, "sawtooth", i * 0.06)); },
     ui() { tone(620, 880, 0.08, 0.05); },
+    fanfare() { [[523, 0], [523, 0.13], [523, 0.26], [784, 0.39], [659, 0.62], [1046, 0.8]].forEach(([f, d], i) => tone(f, f, i === 5 ? 0.7 : i === 3 ? 0.2 : 0.11, 0.07, "square", d)); [[262, 0.39], [392, 0.8]].forEach(([f, d]) => tone(f, f, 0.5, 0.05, "triangle", d)); },
     buy() { tone(880, 1320, 0.09, 0.06); tone(1320, 1760, 0.12, 0.05, "sine", 0.06); },
     coin() { tone(1400, 1900, 0.07, 0.03, "square"); },
     paper() { tone(900, 600, 0.12, 0.05, "square"); },
@@ -2357,14 +2425,14 @@ const DECO = (() => {
     return part(at(g, 0, 0, z), [0x58c84a, 0x3f9e36, 0x7ad860][k % 3]);
   }).concat((() => { const g = new THREE.CylinderGeometry(0.05, 0.07, 1.3, 5); g.rotateX(Math.PI / 2); g.translate(0, 0, 0.9); g.rotateX(-0.75); g.rotateZ(a0); return part(at(g, 0, 0, z), 0x6a7a2e); })());
   // 柄に咲く五弁の花
-  const flower = (z, a, sc = 1) => {
-    const ps = Array.from({ length: 5 }, (_, k) => { const g = new THREE.SphereGeometry(1, 7, 4); g.scale(0.2, 0.05, 0.3); g.translate(0, 0, 0.3); g.rotateY((k / 5) * TAU); return part(g, k % 2 ? 0xffc4dc : 0xffe2ee); });
+  const flower = (z, a, sc = 1, ca = 0xffc4dc, cb = 0xffe2ee) => {
+    const ps = Array.from({ length: 5 }, (_, k) => { const g = new THREE.SphereGeometry(1, 7, 4); g.scale(0.2, 0.05, 0.3); g.translate(0, 0, 0.3); g.rotateY((k / 5) * TAU); return part(g, k % 2 ? ca : cb); });
     ps.push(part(new THREE.SphereGeometry(0.1, 6, 4), 0xf2c860));
     return ps.map((g) => { g.scale(sc, sc, sc); g.translate(0, 0.7, 0); g.rotateZ(a); return at(g, 0, 0, z); });
   };
   // 紙垂（稲妻形に折った白い紙）
   const shide = (z, a) => Array.from({ length: 4 }, (_, k) => { const g = new THREE.PlaneGeometry(0.6, 0.72); g.rotateY(0.7); g.translate((k % 2 ? 0.3 : 0), -1.0 - k * 0.62, 0); g.rotateZ(a); return part(at(g, 0, 0, z), 0xffffff); });
-  const orb = (z, a, r = 1.15, sz = 0.26) => [part(at(new THREE.SphereGeometry(sz, 10, 7), Math.sin(a) * r, Math.cos(a) * r, z), 0xe8fff8), part(at(new THREE.ConeGeometry(sz * 0.8, sz * 4, 8).rotateX(-Math.PI / 2), Math.sin(a) * r, Math.cos(a) * r, z - sz * 2.2), 0x58e8c8)];
+  const orb = (z, a, r = 1.15, sz = 0.26, c1 = 0xe8fff8, c2 = 0x58e8c8) => [part(at(new THREE.SphereGeometry(sz, 10, 7), Math.sin(a) * r, Math.cos(a) * r, z), c1), part(at(new THREE.ConeGeometry(sz * 0.8, sz * 4, 8).rotateX(-Math.PI / 2), Math.sin(a) * r, Math.cos(a) * r, z - sz * 2.2), c2)];
   const GOLD = 0xe8b83a;
   const sets = [
     null,
@@ -2376,7 +2444,27 @@ const DECO = (() => {
     [ring(-1.2, GOLD, 0.74, 0.12), ...tassel(-1.2, 0xa060e0, GOLD), helix(3.2, 6.8, 3, GOLD, 0.67, 0.05), ring(7.1, GOLD, 0.74, 0.09)],   // 紫竹: 紫の房と金の線
     [ring(-1.5, GOLD, 0.82, 0.15), ring(2.9, GOLD, 0.8, 0.15), ring(7.1, GOLD, 0.78, 0.15), helix(-1.2, 2.6, 3, 0xfff0b0, 0.7, 0.05), helix(3.2, 6.8, 3, 0xfff0b0, 0.68, 0.05), ...tassel(-1.5, 0xe0342a, GOLD)],   // 金竹: 金の環と彫りの線 赤い房
     [...flower(-0.4, 0.3, 1.3), ...flower(1.2, 1.9, 1.1), ...flower(3.8, -0.9, 1.2), ...flower(5.6, 0.9, 1), ...flower(8, -2.2, 0.9), ...flower(-2.6, -1.6, 1), ribbon(-1.5, 0xff8ab8, 5.5, 0.55), ribbon(-1.5, 0xffe2ee, 4.2, 0.3, 0.4)],   // 桜: 柄に咲く花と桃色の布
-    [helix(-2, 11, 4, 0x58e8c8, 0.78, 0.045), helix(-2, 11, 4, 0xe8fff8, 0.78, 0.03, Math.PI), ...orb(0.5, 0.4), ...orb(4.2, 2.6, 1.3, 0.3), ...orb(8, -1.6, 1.05, 0.22), ...orb(10.6, 1.2, 0.95, 0.18)]   // 鬼火: 柄を巡る光の筋と 尾を引く火の玉
+    [helix(-2, 11, 4, 0x58e8c8, 0.78, 0.045), helix(-2, 11, 4, 0xe8fff8, 0.78, 0.03, Math.PI), ...orb(0.5, 0.4), ...orb(4.2, 2.6, 1.3, 0.3), ...orb(8, -1.6, 1.05, 0.22), ...orb(10.6, 1.2, 0.95, 0.18)],   // 鬼火: 柄を巡る光の筋と 尾を引く火の玉
+    [...sprig(-1.5, 1.2), ...sprig(7.1, -2, 2)],                                                                              // 若竹
+    [helix(-1.2, 1.0, 6, 0x5a4426, 0.7, 0.11), ring(4.8, 0x5a4426, 0.7, 0.12)],                                               // 枯竹
+    [ring(-1.5, GOLD, 0.8, 0.12), ring(7.1, GOLD, 0.76, 0.12)],                                                               // 黒竹
+    [...sprig(2.9, 2.4), ring(-1.5, 0x3a5a2a, 0.8, 0.14), ring(7.1, 0x3a5a2a, 0.76, 0.14)],                                   // 苔竹
+    [helix(-8, 8.5, 7, 0x3a2a18, 0.66, 0.1)],                                                                                  // 縞竹
+    [ring(-1.2, 0xf2ede0, 0.73, 0.11), ribbon(-1.2, 0xf2ede0, 6, 0.6), ribbon(-1.2, 0x8a8e98, 4.5, 0.3, 0.4)],                // 墨染
+    [helix(-1.4, 0.6, 5, 0x3a1e0c, 0.7, 0.12), ring(2.9, 0x3a1e0c, 0.78, 0.13), ring(7.1, 0x3a1e0c, 0.76, 0.13)],             // 柿渋
+    [helix(-6, 8.5, 22, 0xa88a44, 0.68, 0.11), ring(-6.2, 0x7a6230, 0.72, 0.14), ring(8.7, 0x7a6230, 0.7, 0.14)],             // 藁巻き
+    [helix(-3, 6, 5, 0xf2ede0, 0.71, 0.08), helix(-3, 6, 5, 0xf2ede0, 0.71, 0.08, 0, -1), ring(-3.1, GOLD, 0.74, 0.11), ring(6.1, GOLD, 0.72, 0.11)],   // 緋縅
+    [ring(-1.5, GOLD, 0.8, 0.12), ring(2.9, GOLD, 0.78, 0.12), ring(7.1, GOLD, 0.76, 0.12), ...tassel(-1.5, 0x2a7a62, GOLD)],  // 翡翠
+    [helix(-3, 9, 5, GOLD, 0.69, 0.06), ring(-3.1, GOLD, 0.74, 0.11), ribbon(-3.1, 0xe8ecf8, 4.5, 0.4)],                       // 群青
+    [ring(-1.2, 0x6a3aa8, 0.74, 0.12), ...tassel(-1.2, 0x6a3aa8, 0xf2ede0), ring(4.6, 0x6a3aa8, 0.72, 0.1)],                   // 山吹
+    [helix(-4, 9, 4, GOLD, 0.69, 0.055), helix(-4, 9, 4, GOLD, 0.69, 0.055, 0, -1), ring(-4.1, GOLD, 0.75, 0.12)],             // 漆黒金
+    [helix(-6, 8.5, 6, 0xf2ede0, 0.67, 0.13), ...shide(1.2, 0.5), ...shide(1.2, -0.5)],                                         // 紅白
+    [...flower(-1.5, 0.3, 1.2, 0xc8a8f2, 0xe8dcff), ...flower(0.8, 2.0, 1.1, 0xc8a8f2, 0xe8dcff), ...flower(3.4, -1.0, 1.2, 0xc8a8f2, 0xe8dcff), ...flower(6, 0.9, 1, 0xc8a8f2, 0xe8dcff), ribbon(-1.5, 0xa888e0, 5.5, 0.5), ribbon(-1.5, 0xe8dcff, 4, 0.3, 0.4)],   // 藤
+    [helix(-2, 11, 3, 0xfff8c0, 0.78, 0.05), ...orb(0.5, 0.4, 1.15, 0.24, 0xffffff, 0xf2e24a), ...orb(5, 2.6, 1.25, 0.28, 0xffffff, 0xf2e24a), ...orb(9.5, -1.6, 1.0, 0.2, 0xffffff, 0xf2e24a)],   // 雷
+    [ring(-1.5, 0xf2fbff, 0.82, 0.1), ring(2.9, 0xf2fbff, 0.8, 0.1), ring(7.1, 0xf2fbff, 0.78, 0.1), ...orb(1, 1.0, 1.15, 0.22, 0xffffff, 0xa8e0f8), ...orb(5.5, -2.2, 1.2, 0.26, 0xffffff, 0xa8e0f8), ...orb(9.6, 2.9, 1.0, 0.18, 0xffffff, 0xa8e0f8)],   // 氷
+    [helix(-2, 11, 4, 0xff8a40, 0.78, 0.05), ...orb(0, 0.4, 1.15, 0.28, 0xfff0c0, 0xff5a20), ...orb(3.6, 2.6, 1.3, 0.3, 0xfff0c0, 0xff5a20), ...orb(7.2, -1.6, 1.1, 0.24, 0xfff0c0, 0xff5a20), ...orb(10.4, 1.2, 0.95, 0.18, 0xfff0c0, 0xff5a20)],   // 紅蓮
+    [ring(-1.5, 0xe8ecff, 0.8, 0.1), ring(7.1, 0xe8ecff, 0.76, 0.1), helix(-1.2, 6.8, 4, 0xf8faff, 0.69, 0.04), ...tassel(-1.5, 0x8aa0e0, 0xe8ecff)],   // 月光
+    [0xe0342a, 0xe8a02a, 0x58c84a, 0x3a8ae0, 0x8a52c8].map((c, k) => helix(-6, 9, 3, c, 0.69, 0.07, (k / 5) * TAU))             // 虹
   ];
   return sets.map((ps) => ps && mergeGeometries(ps));
 })();
@@ -2392,7 +2480,8 @@ function paintSpear(hex) {
 }
 const decoMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, emissive: 0x2a2a2a });
 const decoGlow = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, color: 0x8a8a8a });   // 光りすぎないよう少し暗く
-const spearDeco = (i = save.skin) => (DECO[i] ? new THREE.Mesh(DECO[i], i === 9 ? decoGlow : decoMat) : null);
+const DECO_GLOW = new Set([9, 25, 26, 27]);
+const spearDeco = (i = save.skin) => (DECO[i] ? new THREE.Mesh(DECO[i], DECO_GLOW.has(i) ? decoGlow : decoMat) : null);
 // 物干し竿＋洗濯物
 const poleMat = new THREE.MeshLambertMaterial({ color: 0xd9c592, emissive: 0x2a2208 });
 const laundryTex = canvasTex(128, 64, (g) => {
@@ -2490,7 +2579,7 @@ function throwSpear(sx, sy, power, perfect, opts = {}) {
     let mesh, spin = 0;
     if (pole) mesh = buildPole();
     else if (junk) { const k = Math.floor(Math.random() * 3); mesh = new THREE.Mesh(junkGeos[k], junkMat); mesh.scale.setScalar(1.7); spin = k ? 13 : 0.001; }
-    else { mesh = new THREE.Mesh(spearGeo, perfect ? goldMat : spearMat); mesh.scale.setScalar(opts.pebble ? 0.7 : opts.ally ? 1.3 : 2); const d = spearDeco(); if (d) mesh.add(d); }
+    else { mesh = new THREE.Mesh(spearGeo, perfect ? goldMat : spearMat); mesh.scale.setScalar(opts.pebble ? 0.7 : opts.ally ? 1.3 * (opts.big || 1) : 2); const d = spearDeco(); if (d) mesh.add(d); }
     scene.add(mesh);
     spears.push({
       mesh, pos: start.clone(), prev: start.clone(), vel: v, life: 3.2, dmg, pierce, perfect, grav,
@@ -3171,11 +3260,19 @@ function endStage(win) {
     if (win) stars = 1 + (hpR >= 0.7 ? 1 : 0) + (hpR >= 0.95 && acc >= 0.5 ? 1 : 0);
     st.stars = stars;
     let gain, road = [];
+    st.cel = [];
+    save.plays++;
     if (win) {
       gain = Math.round((st.gain + 3 + def.n) * (1 + 0.25 * (stars - 1)));
       save.stage = def.n + 1;
       save.best = Math.max(save.best, save.stage);
+      const r0 = save.road;
       road = grantRoad(def.n);
+      // 仲間が雇えるようになった面では 結果画面の上に演出を出す
+      for (let k = r0; k < save.road; k++) { const r = roadAt(k); if (r.nm) st.cel.push({ t: r.nm, s: CREW.some((c) => c.nm === r.nm) ? "雇えるようになった（仲間のタブから）" : "出撃できる人数が増えた" }); }
+      const bn = grantBonus(def.n);
+      st.cel.push(...bn);
+      road.push(...bn.map((b) => b.label));
       rankSend();
       save.stars[def.n] = Math.max(save.stars[def.n] || 0, stars);
       delete save.fails[def.n];
@@ -3202,8 +3299,81 @@ function endStage(win) {
     $("res-skip").hidden = win;
     $("res-road").hidden = !road.length;
     $("res-road").innerHTML = `解放　${road.join("　")}`;
+    $("res-chest").hidden = save.plays % CHEST_EVERY !== 0;
     setMode("result");
+    if (st.cel.length) fanfare(st.cel);
   }, win ? 900 : 600);
+}
+
+// ---------------- 解放の演出 ----------------
+// items = [{ k: 小見出し, t: 大きく出す名前, s: ひとこと }] を順に見せる
+const celQ = [];
+function fanfare(items) {
+  const idle = !celQ.length;
+  celQ.push(...items);
+  if (idle) celNext(true);
+}
+function celNext(first) {
+  if (!first) celQ.shift();
+  const el = $("unlock"), it = celQ[0];
+  el.hidden = !it;
+  if (!it) return;
+  el.querySelector("small").textContent = it.k || "解放";
+  el.querySelector("b").innerHTML = it.t;
+  el.querySelector("span").innerHTML = it.s || "";
+  const ub = el.querySelector(".ub");
+  ub.classList.remove("in"); void ub.offsetWidth; ub.classList.add("in");
+  audio.fanfare();
+  haptic(40);
+}
+$("unlock").addEventListener("click", () => celNext());
+
+// ---------------- 面を越えるともらえる スキンと宝珠（銭や仲間の道とは別の列） ----------------
+const BONUS = [
+  { at: 5, skin: ["spear", 10] }, { at: 9, gem: 1 }, { at: 13, skin: ["crew", 8] }, { at: 17, skin: ["spear", 11] }, { at: 20, gem: 2 },
+  { at: 24, skin: ["crew", 9] }, { at: 27, skin: ["spear", 14] }, { at: 32, gem: 2 }, { at: 38, skin: ["crew", 10] }, { at: 42, skin: ["spear", 15] },
+  { at: 48, gem: 3 }, { at: 55, skin: ["spear", 18] }, { at: 65, skin: ["crew", 14] }, { at: 80, gem: 5 }, { at: 95, skin: ["spear", 20] },
+  { at: 110, skin: ["crew", 15] }, { at: 130, gem: 5 }, { at: 150, skin: ["spear", 22] }, { at: 175, skin: ["crew", 18] }, { at: 200, gem: 10 }
+];
+const skinOf = ([kind, i]) => (kind === "spear" ? SKINS : CSKINS)[i];
+const bonusLabel = (b) => (b.gem ? `${GEM}${b.gem}` : `${b.skin[0] === "spear" ? "槍" : "衣"}「${skinOf(b.skin).nm}」`);
+// 第n面を越えたぶんを渡して 演出に出す中身を返す
+function grantBonus(n) {
+  const got = [];
+  while (save.bonus < BONUS.length && BONUS[save.bonus].at <= n) {
+    const b = BONUS[save.bonus++];
+    if (b.gem) { save.gem += b.gem; got.push({ k: "ごほうび", t: `${GEM}${b.gem}`, s: "宝珠を手に入れた", label: bonusLabel(b) }); continue; }
+    const [kind, i] = b.skin, has = save.own[kind].includes(i);
+    if (has) save.coins += 300; else save.own[kind].push(i);
+    got.push({ k: "ごほうび", t: skinOf(b.skin).nm, s: has ? `もう持っているので ${COIN}300` : `${kind === "spear" ? "竹槍" : "人々"}のスキンを手に入れた`, label: bonusLabel(b) });
+  }
+  return got;
+}
+
+// ---------------- 縁起物（宝箱から出る 集めもの。1つにつき銭 +2%） ----------------
+const CHARMS = [["達", "だるま"], ["猫", "招き猫"], ["鈴", "風鈴"], ["独", "独楽"], ["凧", "凧"], ["鯉", "鯉のぼり"], ["面", "お面"], ["扇", "扇子"], ["傘", "番傘"], ["灯", "提灯"], ["笛", "竹笛"], ["毬", "手毬"],
+  ["札", "花札"], ["駒", "将棋の駒"], ["盃", "盃"], ["簪", "かんざし"], ["籠", "印籠"], ["絵", "絵馬"], ["守", "お守り"], ["熊", "熊手"], ["鶴", "折り鶴"], ["兜", "兜飾り"], ["雛", "雛人形"], ["鏡", "手鏡"]];
+const CHEST_EVERY = 4;   // 何戦かに一度 結果画面に宝箱が出る
+function openChest() {
+  const coins = 50 + def.n * 10, i = Math.floor(Math.random() * CHARMS.length), has = save.charms.includes(i), gem = Math.random() < 0.15;
+  save.coins += coins + (has ? 100 : 0);
+  if (!has) save.charms.push(i);
+  if (gem) save.gem++;
+  persist();
+  fanfare([{ k: "宝箱", t: CHARMS[i][1], s: has ? `もう持っている縁起物<br>${COIN}+${coins + 100}` : `縁起物を手に入れた（銭 +2%）<br>${COIN}+${coins}` }, ...(gem ? [{ k: "宝箱", t: `${GEM}1`, s: "宝珠が入っていた" }] : [])]);
+}
+// 宝珠のくじ。宝珠でしか引けず ここでしか出ないスキンが出る
+const PGACHA = 5, gemLeft = () => 3 - (save.gemad.day === today() ? save.gemad.n : 0);
+function pgacha() {
+  if (save.gem < PGACHA) return false;
+  save.gem -= PGACHA;
+  const pool = [...SKINS.map((x, i) => ["spear", i, x]), ...CSKINS.map((x, i) => ["crew", i, x])].filter((x) => x[2].p);
+  const [kind, i] = pick(pool), dup = save.own[kind].includes(i);
+  if (dup) save.gem += 2;
+  else { save.own[kind].push(i); if (kind === "spear") save.skin = i; else save.cskin = i; applySkin(); }
+  lookKind = kind;
+  pulled = { kind, i, dup, back: 2, gem: true };
+  return true;
 }
 
 // ---------------- 強化（結果画面とタイトルで） ----------------
@@ -3214,7 +3384,7 @@ let askedName = false;   // 名前を聞くのは1回の起動につき一度だ
 let tab = "up";       // タイトルの棚: up=強化 / crew=仲間 / look=見た目
 let say = "";
 function refreshShops() {
-  for (const el of [$("menu-wallet"), $("res-wallet")]) el.innerHTML = `${COIN}${save.coins}`;
+  for (const el of [$("menu-wallet"), $("res-wallet")]) el.innerHTML = `${COIN}${save.coins}${save.gem ? `　${GEM}${save.gem}` : ""}`;
   $("start").textContent = `出撃　第${save.stage}面`;
   for (const shop of document.querySelectorAll("[data-shop]")) {
     shop.replaceChildren();
@@ -3295,8 +3465,11 @@ function trainCrew(id) {
   const c = CREW.find((x) => x.id === id), cost = crewUpCost(c);
   if (!crewLv(id) || save.coins < cost) return false;
   save.coins -= cost;
+  const t0 = crewTier(save.crew[id]);
   save.crew[id]++;
   say = crewSay(c);
+  if (id !== "pilot" && crewTier(save.crew[id]) > t0) fanfare([{ k: "段階が上がった", t: TIERS[id][t0 + 1], s: `${c.nm}の見た目と特技が変わった` }]);
+  else if (id === "pilot" && friendTier(save.crew[id]) > friendTier(save.crew[id] - 1)) fanfare([{ k: "新しい機種", t: FRIENDS[friendTier(save.crew[id])].nm, s: "飛行兵が呼ぶ友軍機が変わった" }]);
   return true;
 }
 // 見た目を買う・付け替える
@@ -3314,8 +3487,20 @@ const SKINS = [
   { nm: "竹", r: 0, c: 0xb4c263, e: 0x2c2e0c, t: 0x9fe8e0 }, { nm: "青竹", r: 0, c: 0x58c84a, e: 0x123a14, t: 0x8ff0a0 },
   { nm: "煤竹", r: 0, c: 0x8a5a38, e: 0x2a1608, t: 0xd8b890 }, { nm: "白竹", r: 0, c: 0xe8e2cc, e: 0x3a382c, t: 0xffffff },
   { nm: "朱塗り", r: 1, c: 0xd8382a, e: 0x3a0c08, t: 0xff8a70 }, { nm: "藍染", r: 1, c: 0x3a62c8, e: 0x0c1838, t: 0x8ab4ff },
-  { nm: "紫竹", r: 1, c: 0x8a52c8, e: 0x220c38, t: 0xd0a0ff }, { nm: "金竹", r: 2, c: 0xe8b83a, e: 0x5a3e08, t: 0xffe08a, fx: "spark" },
-  { nm: "桜", r: 2, c: 0xf29abc, e: 0x3a1424, t: 0xffc4e0, fx: "petal" }, { nm: "鬼火", r: 2, c: 0x48e0c0, e: 0x0a4038, t: 0x60ffd0, fx: "wisp" }
+  { nm: "紫竹", r: 1, c: 0x8a52c8, e: 0x220c38, t: 0xd0a0ff }, { nm: "金竹", r: 2, c: 0xe8b83a, e: 0x5a3e08, t: 0xffe08a, fx: "spark", fxc: 0xffe08a },
+  { nm: "桜", r: 2, c: 0xf29abc, e: 0x3a1424, t: 0xffc4e0, fx: "petal", fxc: 0xffb0cc }, { nm: "鬼火", r: 2, c: 0x48e0c0, e: 0x0a4038, t: 0x60ffd0, fx: "wisp", fxc: 0x50f0d0 },
+  // ここから追加ぶん。p: true は宝珠のくじでしか出ない
+  { nm: "若竹", r: 0, c: 0x9ad85a, e: 0x1a3a10, t: 0xb8f090 }, { nm: "枯竹", r: 0, c: 0xb89a62, e: 0x2a2010, t: 0xe0d0a0 },
+  { nm: "黒竹", r: 0, c: 0x3a363a, e: 0x0a0a0c, t: 0xb0b0b8 }, { nm: "苔竹", r: 0, c: 0x5a7a3a, e: 0x14200c, t: 0xa0c880 },
+  { nm: "縞竹", r: 0, c: 0xc8a868, e: 0x2a2010, t: 0xe8d8a8 }, { nm: "墨染", r: 0, c: 0x565a66, e: 0x101216, t: 0xc8ccd8 },
+  { nm: "柿渋", r: 0, c: 0xb8622a, e: 0x2a1206, t: 0xf0a868 }, { nm: "藁巻き", r: 0, c: 0xcdb46a, e: 0x2a2410, t: 0xf0e0a0 },
+  { nm: "緋縅", r: 1, c: 0xc02a2a, e: 0x3a0808, t: 0xff8080 }, { nm: "翡翠", r: 1, c: 0x3aa88a, e: 0x0a2a22, t: 0x90f0d0 },
+  { nm: "群青", r: 1, c: 0x2a3a9a, e: 0x080c2a, t: 0x8898ff }, { nm: "山吹", r: 1, c: 0xe8b02a, e: 0x3a2a06, t: 0xffd870 },
+  { nm: "漆黒金", r: 1, c: 0x242226, e: 0x08080a, t: 0xf2c860 }, { nm: "紅白", r: 1, c: 0xd83a32, e: 0x3a0a08, t: 0xffffff },
+  { nm: "藤", r: 1, c: 0x8a6ac8, e: 0x1c1038, t: 0xd0b8ff },
+  { nm: "雷", r: 2, p: true, c: 0xf2e24a, e: 0x5a5008, t: 0xfff8a0, fx: "spark", fxc: 0xfff4a0 }, { nm: "氷", r: 2, p: true, c: 0x9adcf2, e: 0x16404e, t: 0xd8f4ff, fx: "petal", fxc: 0xe8f8ff },
+  { nm: "紅蓮", r: 2, p: true, c: 0xd8281c, e: 0x4a0a06, t: 0xff7040, fx: "wisp", fxc: 0xff6a30 }, { nm: "月光", r: 2, p: true, c: 0xd8dcec, e: 0x3a3e52, t: 0xe8ecff, fx: "spark", fxc: 0xe8ecff },
+  { nm: "虹", r: 2, p: true, c: 0xf2f2f2, e: 0x343434, t: 0xffffff, fx: "spark", fxc: 0xffffff }
 ];
 // 見た目は銭で引くくじ（ガチャ）で手に入れる。確率は画面に出す。かぶったら4割戻る
 const RARE = ["並", "上", "極"], ODDS = [0.6, 0.3, 0.1];
@@ -3327,7 +3512,7 @@ function gacha(kind) {
   save.coins -= cost;
   let x = Math.random(), r = 0;
   while (r < 2 && x >= ODDS[r]) x -= ODDS[r++];
-  const pool = list.map((s, i) => i).filter((i) => i > 0 && list[i].r === r);
+  const pool = list.map((s, i) => i).filter((i) => i > 0 && list[i].r === r && !list[i].p);
   const i = pick(pool), dup = save.own[kind].includes(i);
   if (dup) save.coins += Math.round(cost * 0.4);
   else { save.own[kind].push(i); if (kind === "spear") save.skin = i; else save.cskin = i; applySkin(); }
@@ -3337,24 +3522,38 @@ function gacha(kind) {
 function renderLook() {
   const kind = lookKind, list = kind === "spear" ? SKINS : CSKINS, cur = kind === "spear" ? save.skin : save.cskin;
   const sw = (s) => "#" + new THREE.Color(kind === "spear" ? s.c : s.cloth ?? 0x7a5a6e).getHexString();
-  $("look-wallet").innerHTML = `${COIN}${save.coins}`;
+  $("look-wallet").innerHTML = `${COIN}${save.coins}　${GEM}${save.gem}`;
+  const charm = kind === "charm";
+  for (const id of ["look-prev", "gacha-btn", "odds1", "pgacha-btn", "odds2", "gem-ad"]) $(id).hidden = charm;
+  $("odds3").hidden = !charm;
+  $("pgacha-btn").disabled = save.gem < PGACHA;
+  $("pgacha-btn").innerHTML = `宝珠のくじ　${GEM}${PGACHA}`;
+  $("gem-left").textContent = `あと${gemLeft()}回`;
+  $("gem-ad").disabled = gemLeft() <= 0;
+  if (charm) {
+    for (const b of document.querySelectorAll("[data-look]")) b.classList.toggle("on", b.dataset.look === kind);
+    $("look-grid").innerHTML = CHARMS.map(([g, nm], i) => { const own = save.charms.includes(i); return `<button disabled class="r${own ? 1 : 0}" style="opacity:${own ? 1 : 0.45}"><span class="big">${own ? g : "？"}</span><span class="nm">${own ? nm : "まだ"}</span></button>`; }).join("");
+    $("look-count").textContent = `${save.charms.length} / ${CHARMS.length}　銭 +${save.charms.length * 2}%`;
+    $("pull").hidden = true;
+    return;
+  }
   for (const b of document.querySelectorAll("[data-look]")) b.classList.toggle("on", b.dataset.look === kind);
   $("look-grid").innerHTML = list.map((s, i) => {
     const own = save.own[kind].includes(i);
-    return `<button data-skin="${kind}:${i}" class="r${s.r} ${cur === i ? "on" : ""} ${pulled && pulled.kind === kind && pulled.i === i ? "new" : ""}" ${own ? "" : "disabled"}>`
+    return `<button data-skin="${kind}:${i}" class="r${s.r} ${s.p ? "p" : ""} ${cur === i ? "on" : ""} ${pulled && pulled.kind === kind && pulled.i === i ? "new" : ""}" ${own ? "" : "disabled"}>`
       + `<em>${RARE[s.r]}</em><i style="background:${own ? sw(s) : "#2a3038"}"></i><span class="nm">${own ? s.nm : "？"}</span><span class="cs">${cur === i ? "使用中" : own ? "　" : "まだ"}</span></button>`;
   }).join("");
   const all = save.own[kind].length >= list.length;
   const gb = $("gacha-btn");
   gb.disabled = save.coins < GACHA[kind];
   gb.innerHTML = `くじを引く　${COIN}${GACHA[kind]}`;
-  $("look-count").textContent = `${save.own[kind].length} / ${list.length}${all ? "　全部そろった" : ""}`;
+  $("look-count").textContent = `${save.own[kind].length} / ${list.length}${all ? " 済" : ""}`;
   const p = $("pull");
   p.hidden = !pulled || pulled.kind !== kind;
   if (!p.hidden) {
     const s = list[pulled.i];
     p.className = "r" + s.r;
-    p.innerHTML = `<em>${RARE[s.r]}</em><i style="background:${sw(s)}"></i><b class="mincho">${s.nm}</b><span class="mono">${pulled.dup ? `かぶり　${COIN}+${pulled.back}` : "新しいスキン"}</span>`;
+    p.innerHTML = `<em>${RARE[s.r]}</em><i style="background:${sw(s)}"></i><b class="mincho">${s.nm}</b><span class="mono">${pulled.dup ? `かぶり　${pulled.gem ? GEM : COIN}+${pulled.back}` : "新しいスキン"}</span>`;
     void p.offsetWidth; p.classList.add("in");
   }
 }
@@ -3363,6 +3562,7 @@ function renderLook() {
 const pv = { key: "", t: 0, last: 0 };
 function previewLook(now) {
   const c = $("look-prev");
+  if (lookKind === "charm") return;
   if (!pv.r) {
     pv.r = new THREE.WebGLRenderer({ canvas: c, alpha: true, antialias: true });
     pv.scene = new THREE.Scene();
@@ -3398,7 +3598,7 @@ function previewLook(now) {
     if (k) {
       const N = k === "wisp" ? 46 : 26, geo = new THREE.BufferGeometry();
       geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(N * 3).fill(999), 3));
-      pv.pts = new THREE.Points(geo, new THREE.PointsMaterial({ map: softTex, color: k === "wisp" ? 0x50f0d0 : k === "petal" ? 0xffb0cc : 0xffe08a, size: k === "wisp" ? 3.2 : k === "petal" ? 1.5 : 1.3, transparent: true, depthWrite: false, blending: k === "petal" ? THREE.NormalBlending : THREE.AdditiveBlending }));
+      pv.pts = new THREE.Points(geo, new THREE.PointsMaterial({ map: softTex, color: SKINS[save.skin].fxc, size: k === "wisp" ? 3.2 : k === "petal" ? 1.5 : 1.3, transparent: true, depthWrite: false, blending: k === "petal" ? THREE.NormalBlending : THREE.AdditiveBlending }));
       pv.pts.frustumCulled = false;
       pv.pts.userData = { k, life: new Float32Array(N), vel: new Float32Array(N * 3) };
       pv.scene.add(pv.pts);
@@ -3425,7 +3625,8 @@ function previewLook(now) {
   else for (const p of pv.obj.children) p.rotation.y = Math.PI + Math.sin(pv.t * 0.8) * 1.1;   // 背中を中心に左右へ振って見せる
   pv.r.render(pv.scene, pv.cam);
 }
-const SFX = { wisp: new THREE.Color(0x50f0d0), white: new THREE.Color(0xe8fff8), petal: new THREE.Color(0xffb0cc), gold: new THREE.Color(0xffe08a) };
+const SFX = {};
+const fxCol = (hex) => (SFX[hex] ||= new THREE.Color(hex));
 const trailCol = new THREE.Color(0x9fe8e0);
 const ROAD = [
   { at: 3, nm: "祖母" }, { at: 6, nm: "祖父" }, { at: 8, coins: 100 }, { at: 10, nm: "子ども" }, { at: 12, coins: 200 }, { at: 15, nm: "消防団" },
@@ -3456,11 +3657,9 @@ function grantRoad(n) {
   return got;
 }
 function renderRoad() {
-  const from = Math.max(0, save.road - 1);
-  $("road").innerHTML = [0, 1, 2, 3].map((i) => {
-    const k = from + i, r = roadAt(k);
-    return `<div class="road-chip ${k < save.road ? "done" : k === save.road ? "next" : ""}"><b>${roadLabel(r)}</b>第${r.at}面</div>`;
-  }).join("");
+  const next = [roadAt(save.road), roadAt(save.road + 1)].map((r) => ({ at: r.at, label: roadLabel(r) }))
+    .concat(BONUS.slice(save.bonus, save.bonus + 2).map((b) => ({ at: b.at, label: bonusLabel(b) }))).sort((a, b) => a.at - b.at);
+  $("road").innerHTML = next.map((r, i) => `<div class="road-chip ${i ? "" : "next"}"><b>${r.label}</b>第${r.at}面</div>`).join("");
 }
 
 // ---------------- 毎日の配給と、留守のあいだの見張りの報酬 ----------------
@@ -3526,6 +3725,11 @@ document.addEventListener("click", (e) => {
   }
   if (b.dataset.tab) { tab = b.dataset.tab; say = ""; if (mode !== "menu") setMode("menu"); else refreshShops(); audio.ui(); return; }
   if (b.dataset.look) { lookKind = b.dataset.look; pulled = null; refreshShops(); audio.ui(); return; }
+  if (b.id === "pgacha-btn") {
+    if (pgacha()) { persist(); audio.star(pulled.dup ? 0 : 3); haptic(pulled.dup ? 10 : 50); }
+    refreshShops();
+    return;
+  }
   if (b.id === "gacha-btn") {
     if (gacha(lookKind)) { persist(); audio.star(pulled.dup ? 0 : 1 + (lookKind === "spear" ? SKINS : CSKINS)[pulled.i].r); haptic(pulled.dup ? 10 : 40); }
     refreshShops();
@@ -3579,6 +3783,10 @@ document.addEventListener("click", (e) => {
     });
   } else if (a === "skip") {
     ads.rewarded(() => { save.stage = def.n + 1; persist(); startStage(save.stage); });
+  } else if (a === "chest") {
+    ads.rewarded(() => { $("res-chest").hidden = true; openChest(); refreshShops(); });
+  } else if (a === "gemad") {
+    if (gemLeft() > 0) ads.rewarded(() => { save.gem++; save.gemad = { day: today(), n: (save.gemad.day === today() ? save.gemad.n : 0) + 1 }; persist(); refreshShops(); fanfare([{ k: "宝珠", t: `${GEM}1`, s: "宝珠を手に入れた" }]); });
   } else if (a === "free") {
     if (freeLeft() > 0) ads.rewarded(() => { freeUp = true; refreshShops(); });
   } else if (a === "gift") takeGift(1);
@@ -3660,16 +3868,31 @@ function frame(now) {
   const k = handSpear.userData.kick;
   handSpear.userData.kick = Math.max(0, k - real * 4);
   const pull = input.charging ? clamp(input.t / chargeFull(), 0, 1) : 0;
-  handSpear.position.set(1.9, -3.0 - k * 1.2 + pull * 0.25, -5.6 + pull * 1.3 - k * 2.5);
+  // 槍の向こうに敵や爆弾がいるあいだは 槍を下げて隠さない（槍の画面上の位置は 下げていないときに覚えておく）
+  const hu = handSpear.userData;
+  if ((hu.hide || 0) < 0.02 && handSpear.visible) {
+    const sp = hu.sp, a = screenOf(sp.localToWorld(tmpV.set(0, 0, -6))), b = a && screenOf(sp.localToWorld(tmpV2.set(0, 0, 13)));
+    if (a && b) hu.seg = [a.x, a.y, b.x - a.x, b.y - a.y];
+  }
+  let behind = false;
+  if (hu.seg && mode === "play") for (const t of [...planes, ...bombs]) {
+    if (t.dead || t.falling || t.gone) continue;
+    const q = screenOf(t.pos);
+    if (!q) continue;
+    const [ax, ay, dx, dy] = hu.seg, u = clamp(((q.x - ax) * dx + (q.y - ay) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+    if (Math.hypot(q.x - ax - dx * u, q.y - ay - dy * u) < 50 + 16 * (t.size || 1)) { behind = true; break; }
+  }
+  hu.hide = (hu.hide || 0) + ((behind ? 1 : 0) - (hu.hide || 0)) * Math.min(1, real * (behind ? 9 : 2));
+  handSpear.position.set(1.9 + hu.hide * 1.2, -3.0 - k * 1.2 + pull * 0.25 - hu.hide * 3.4, -5.6 + pull * 1.3 - k * 2.5);
   handSpear.visible = mode === "play" && (st.ammo > 0 || k > 0.2);
   const sfx = SKINS[save.skin]?.fx;
   if (sfx && handSpear.visible && (handSpear.userData.fxT = (handSpear.userData.fxT || 0) - real) <= 0) {
     handSpear.userData.fxT = sfx === "wisp" ? 0.09 : 0.11;
     // 鬼火の火は柄の手元寄りだけに小さく出す（穂先の先＝狙う空をふさがない）
     const at0 = handSpear.userData.sp.localToWorld(tmpV.set(rand(-0.5, 0.5), rand(-0.5, 0.5), sfx === "wisp" ? rand(-5, 5) : rand(-3, 12))).clone();
-    if (sfx === "wisp") fx.emit(at0, V(rand(-0.6, 0.6), rand(1, 2.2), rand(-0.6, 0.6)), SFX.wisp, rand(0.22, 0.42), rand(0.25, 0.45), { drag: 0.6, alpha: 0.6 });
-    else if (sfx === "petal") fx.emit(at0, V(rand(-2.5, 2.5), rand(-0.5, 1.5), rand(-1, 1)), SFX.petal, rand(0.3, 0.5), rand(0.8, 1.4), { drag: 0.8, grav: 2.5 });
-    else fx.emit(at0, V(rand(-1, 1), rand(-0.5, 1.5), rand(-1, 1)), SFX.gold, rand(0.25, 0.5), rand(0.2, 0.45), { drag: 0.5 });
+    if (sfx === "wisp") fx.emit(at0, V(rand(-0.6, 0.6), rand(1, 2.2), rand(-0.6, 0.6)), fxCol(SKINS[save.skin].fxc), rand(0.22, 0.42), rand(0.25, 0.45), { drag: 0.6, alpha: 0.6 });
+    else if (sfx === "petal") fx.emit(at0, V(rand(-2.5, 2.5), rand(-0.5, 1.5), rand(-1, 1)), fxCol(SKINS[save.skin].fxc), rand(0.3, 0.5), rand(0.8, 1.4), { drag: 0.8, grav: 2.5 });
+    else fx.emit(at0, V(rand(-1, 1), rand(-0.5, 1.5), rand(-1, 1)), fxCol(SKINS[save.skin].fxc), rand(0.25, 0.5), rand(0.2, 0.45), { drag: 0.5 });
   }
   shake = Math.max(0, shake - real * 30);
   const sway = mode !== "menu" && def?.g.has("roofmove") ? Math.sin(st.t * 0.55) * 44 : 0;
