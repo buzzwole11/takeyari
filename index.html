@@ -563,7 +563,7 @@ function stageDef(n) {
     hpMul: (1 + Math.min(lv, 50) * 0.05 + Math.max(0, lv - 50) * 0.02) * (1 - Math.min(0.3, fails * 0.1)),   // 硬さの伸びは50面から緩める（1面が長くなりすぎるため）
     armored: g.has("armor") ? 1 : n >= 8 ? Math.min(0.35, (n - 7) * 0.04) : 0,
     bombTarget: Math.max(3, 6 + Math.min(6, Math.floor(lv / 6)) - fails),
-    wind: g.has("wind") ? (Math.random() < 0.5 ? -1 : 1) * rand(70, 110) : 0,
+    wind: g.has("wind") ? (Math.random() < 0.5 ? -1 : 1) * rand(140, 200) : 0,
     grav: g.has("rain") ? 1.5 : 1,          // 雨の日は竹槍が重い
     spearSpeed: g.has("rain") ? 0.92 : 1,
     fighterMul: 1 + Math.min(0.7, Math.max(0, lv - 30) * 0.01),   // 30面より先で速くなるのは戦闘機だけ
@@ -2447,7 +2447,7 @@ function solve(start, speed, target, aimPoint, grav) {
   }
   const vel = P.clone().sub(start).divideScalar(T);
   vel.y += 0.5 * grav * T;
-  vel.x -= 0.5 * (def?.wind || 0) * T * 0.8;
+  vel.x -= 0.5 * (def?.wind || 0) * T * 0.6;   // 風の流されは6割だけ自動で打ち消す。残りは風上を狙って補う
   return vel;
 }
 
