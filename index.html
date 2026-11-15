@@ -259,6 +259,9 @@
   #unlock b { display: block; font-size: min(72px, 17vw); line-height: 1.15; color: var(--paper); text-shadow: 0 0 30px rgba(242, 196, 109, 0.9), 0 6px 30px #000; white-space: nowrap; }
   #unlock .ub > span { display: block; font-size: 16px; color: var(--paper); margin-top: 12px; }
   #unlock em { display: block; font-style: normal; font-size: 12px; color: var(--muted); margin-top: 26px; }
+  .pp-link { margin-top: 8px; padding: 2px 10px; font-size: 11px; color: var(--muted); background: none; border: 0; text-decoration: underline; }
+  #pp { background: #f6f3ea; z-index: 45; padding: 0 0 10px; }
+  #pp iframe { flex: 1; width: 100%; border: 0; background: #f6f3ea; }
   #gemshop { background: rgba(4, 9, 16, 0.94); justify-content: center; z-index: 25; }
   .gs-say { width: min(340px, 100%); font-size: 14px; color: var(--paper); margin: 4px 0 6px; }
   .gemplus { font: inherit; font-size: 20px; color: #cfe6ff; padding: 3px 12px 3px 8px; margin-left: 10px; border: 1px solid rgba(120, 180, 255, 0.7); border-radius: 999px; background: rgba(14, 30, 52, 0.9); box-shadow: 0 0 12px rgba(120, 180, 255, 0.45); animation: glow 1.6s ease-in-out infinite; }
@@ -358,6 +361,7 @@
   <div id="shop-say" hidden></div>
   <button class="reward slim" data-action="free"><svg class="ic"><use href="#i-play"/></svg> 広告で 強化を1回タダ <span class="mono" data-free></span></button>
   <button id="start" class="primary" data-action="start">出撃</button>
+  <button class="pp-link" id="pp-open">個人情報方針</button>
 </section>
 
 <section id="pause" class="screen" hidden>
@@ -419,6 +423,12 @@
   <div class="rank-nm"><input id="ask-name" maxlength="8" placeholder="名前（8文字まで）" autocomplete="off" enterkeyhint="done"><button class="small" id="ask-ok">決定</button></div>
   <div class="odds">面を越えるたびに番付へ載ります。名前・越えた面の数・端末ごとの乱数IDを送ります</div>
   <button class="small" id="ask-skip">名前なしで遊ぶ（番付に載らない）</button>
+</section>
+
+<!-- 個人情報方針。アプリの中でそのまま読める（同じ文をストアのURLにも置いてある） -->
+<section id="pp" class="screen" hidden>
+  <iframe id="pp-frame" title="個人情報方針"></iframe>
+  <button class="small" id="pp-close">とじる</button>
 </section>
 
 <!-- 宝珠の店。タイトルの宝珠の札や 宝珠が足りないときに開く -->
@@ -3907,6 +3917,8 @@ document.addEventListener("click", (e) => {
   if (b.dataset.look) { lookKind = b.dataset.look; pulled = null; refreshShops(); audio.ui(); return; }
   if (b.dataset.charm) { charmSel = Number(b.dataset.charm); refreshShops(); audio.ui(); return; }
   if (b.dataset.buy) { if (shop) shop.buy(b.dataset.buy); audio.ui(); return; }
+  if (b.id === "pp-open") { $("pp-frame").src = "privacy.html"; $("pp").hidden = false; audio.ui(); return; }
+  if (b.id === "pp-close") { $("pp").hidden = true; audio.ui(); return; }
   if (b.id === "gem-open") { openGems(); audio.ui(); return; }
   if (b.id === "gs-close") { $("gemshop").hidden = true; audio.ui(); return; }
   if (b.id === "promo" || b.id === "gs-gacha") { $("gemshop").hidden = true; pulled = null; sub = "look"; setMode("upgrade"); audio.ui(); return; }
