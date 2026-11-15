@@ -499,13 +499,13 @@ const GIMMICKS = {
 // 小型機の性格。面で初めて出たあとは、ふつうの面にも護衛として混ざる
 const ESC = {
   // zig は横にくねる幅、wav は上下にうねる幅。戦闘機は速く、まっすぐ飛ばない
-  fighter: { model: "fighter", hp: 1.4, speed: 2.5, drops: 0, zig: 95, wav: 34 },
-  gull: { model: "gull", hp: 2, speed: 2.2, drops: 1, dive: true, zig: 70, wav: 0 },
-  cat: { model: "cat", hp: 3.2, speed: 2.0, drops: 1, size: 1.1, zig: 80, wav: 26 },
-  jet: { model: "jet", hp: 2, speed: 3.4, drops: 0, zig: 60, wav: 20 },
-  jet2: { model: "jet2", hp: 3.4, speed: 3.0, drops: 2, size: 1.12, zig: 50, wav: 16 }
+  fighter: { model: "fighter", hp: 1.4, speed: 2.5, drops: 0, zig: 170, wav: 70 },
+  gull: { model: "gull", hp: 2, speed: 2.2, drops: 1, dive: true, zig: 130, wav: 0 },
+  cat: { model: "cat", hp: 3.2, speed: 2.0, drops: 1, size: 1.1, zig: 145, wav: 55 },
+  jet: { model: "jet", hp: 2, speed: 3.4, drops: 0, zig: 120, wav: 45 },
+  jet2: { model: "jet2", hp: 3.4, speed: 3.0, drops: 2, size: 1.12, zig: 100, wav: 36 }
 };
-const FAR = 900, FAR_UP = 1000;   // 敵は FAR ぶん奥 FAR_UP ぶん上から 速度を落としながら下りてくる
+const FAR = 900, HIGH = 150;   // 敵はこの距離ぶん奥から、速度を落としながら入ってくる
 const FIRST = Object.keys(GIMMICKS);
 // 31面からは「編隊の組み方」と「天候・武器」をひとつずつ掛け合わせる
 const FORMS = ["column", "vee", "swarm", "mirror", "letters", "zigzag", "basic", "swarm"];
@@ -2007,7 +2007,7 @@ function spawn(e) {
   const z = e.z ?? rand(-800, -700);
   const halfW = Math.abs(z) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
   const x = e.x ?? rand(-0.7, 0.7) * Math.min(halfW, 420);
-  const y = e.y ?? (boss ? 230 : paper ? rand(110, 200) : e.dive ? rand(250, 320) : low ? rand(55, 95) : rand(120, 240));
+  const y = (e.y ?? (boss ? 230 : paper ? rand(110, 200) : e.dive ? rand(250, 320) : low ? rand(55, 95) : rand(120, 240))) + (low || e.away ? 0 : HIGH);   // HIGH: 画面の上のほうを飛ばすための高さの上乗せ
   const mesh = paper ? buildPaperPlane() : buildBomber(e.model);
   const armored = !boss && !paper && !e.small && !e.gold && !e.model && (e.armored ?? Math.random() < def.armored);
   const size = (e.size ?? (boss ? 1.9 : armored ? 1.15 : 1)) * (e.model ? 1.25 : 1) * 2.3;
@@ -2024,7 +2024,7 @@ function spawn(e) {
     mesh, mat, boss, paper, armored, size, hp, maxHp: hp, bar: null,
     giant: !!e.giant, gold: !!e.gold, small: !!e.small, away: !!e.away, zig: e.zig || 0, lit: 0,
     wav: e.wav || 0, kind: e.model || "bomber", aimT: 0, aimPitch: 0, aimYaw: 0, pitch: 0, yaw: 0, fighter: !!e.model, jet: e.model === "jet" || e.model === "jet2", app: e.away ? 0 : 1,
-    pos: V(x, e.away ? y : y + FAR_UP, e.away ? z : z - FAR),
+    pos: V(x, y, e.away ? z : z - FAR),
     // 急降下する機体は、頭上に来るころ屋根すれすれまで下りる
     vel: V(e.vx ?? (e.away ? 0 : -x * 0.04), e.dive ? (-(y - 85) * speed) / (Math.abs(z) - 120) : 0, e.away ? -speed * 1.15 : speed),
     drops: e.drops ?? (boss ? 6 : paper || e.away ? 0 : bombStage ? 3 : 1),
@@ -2187,8 +2187,7 @@ function futurePos(t, T) {
   const P = t.pos.clone();
   if (t.app > 0) {
     const aT = def.n === 1 ? 1.1 : 2.6, u0 = 1 - t.app, u1 = Math.min(1, u0 + T / aT);
-    const k = (1 - (1 - u1) ** 2) - (1 - (1 - u0) ** 2);
-    P.z += FAR * k; P.y -= FAR_UP * k;
+    P.z += FAR * ((1 - (1 - u1) ** 2) - (1 - (1 - u0) ** 2));
     T = Math.max(0, T - t.app * aT);
   }
   return P.addScaledVector(t.vel, T);
@@ -2612,8 +2611,7 @@ function update(dt, real) {
         const u0 = 1 - p.app;
         p.app = Math.max(0, p.app - dt / (def.n === 1 ? 1.1 : 2.6));
         const u1 = 1 - p.app;
-        const k = (1 - (1 - u1) ** 2) - (1 - (1 - u0) ** 2);
-        p.pos.z += FAR * k; p.pos.y -= FAR_UP * k;
+        p.pos.z += FAR * ((1 - (1 - u1) ** 2) - (1 - (1 - u0) ** 2));
       } else p.pos.addScaledVector(p.vel, dt);
       if (p.jet) {
         tmpV2.set(p.pos.x, p.pos.y, p.pos.z + p.mesh.userData.tail * p.size);
@@ -2624,7 +2622,7 @@ function update(dt, real) {
       // くねり。戦闘機は速い周期で左右に振れ、上下にもうねる（画面の外までは出ない）
       if (p.zig) {
         const f = p.fighter ? 2.3 : 1.5;
-        p.vel.x = Math.cos(st.t * f + p.ph) * p.zig - (p.fighter ? p.pos.x * 0.25 : 0);
+        p.vel.x = (Math.cos(st.t * f + p.ph) + (p.fighter ? 0.5 * Math.sin(st.t * f * 1.7 + p.ph * 2.3) : 0)) * p.zig - (p.fighter ? p.pos.x * 0.25 : 0);   // 戦闘機は二つの波を重ねて読みにくくする
       }
       if (p.wav && p.app <= 0) p.pos.y += Math.cos(st.t * 1.9 + p.ph * 1.7) * p.wav * dt;
       p.mesh.rotation.z = Math.sin(st.t * 0.7 + p.ph) * (p.paper ? 0.35 : 0.04) + p.jolt - (p.fighter ? p.vel.x * 0.006 : 0);
