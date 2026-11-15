@@ -1094,6 +1094,43 @@ const BOMBER = (() => {
   return { body, wingL: wing(-1), wingR: wing(1), props, wingAt: [WX, 0, WZ], tail: -31 };
 })();
 
+// 双発の中型爆撃機（小型機の群れ）。ガラスの機首 肩の高さの主翼 太い発動機2つ 水平尾翼の両端に立つ2枚の垂直尾翼
+const MEDIUM = (() => {
+  const OD = 0x5d6544, OD2 = 0x4a5136, GY = 0x9aa1a2, DK = 0x1c2023, GL = 0x1b3442, BOOT = 0x25292c;
+  const W = 2.7, WX = 14, WZ = 4;
+  // 箱に近い断面の胴体。下面は灰色
+  const fus = hull([
+    [30.5, 0.3], [29.6, 1.5, 1.5, 1.7], [27.5, 2.3, 2.2, 2.6], [24, W, 2.7, 3.1], [23.9, W, 2.7, 3.1], [19, W, 4.1, 3.2], [13, W, 4.2, 3.2], [9, W, 3.2, 3.2],
+    [-6, W, 3.2, 3.2], [-14, 2.4, 3.0, 2.9, 0.1], [-22, 1.9, 2.5, 2.2, 0.5], [-27, 1.5, 1.9, 1.5, 0.9], [-29.5, 1.1, 1.3, 1.0, 1.1], [-30.5, 0.3, 0.4, 0.3, 1.1]
+  ], 12);
+  const parts = [part(fus, OD, (x, y, z) => (z > 23.95 ? GL : z < -29.4 ? GL : y > 3.3 && z > 12 && z < 19.5 ? GL : y < -1.6 ? GY : 0))];
+  parts.push(part(at(new THREE.TorusGeometry(2.7, 0.14, 4, 12), 0, -0.2, 24), OD2));
+  // 背中の銃塔
+  { const t = new THREE.SphereGeometry(1.5, 8, 5); t.scale(1, 0.7, 1); parts.push(part(at(t, 0, 3.2, -9), GL)); }
+  // 水平尾翼と その両端に立つ2枚の垂直尾翼
+  const TS = [[0.8, 1.5, -22.5, 7.6, 0.11], [12.2, 2.1, -23.6, 5.6, 0.1]];
+  const FIN = [[-3.4, 0, -25.6, 3.6, 0.08], [-1.2, 0, -23.2, 7.6, 0.1], [3.2, 0, -22.9, 8.2, 0.1], [6.8, 0, -24.6, 5.2, 0.08], [8.0, 0, -26.4, 2.4, 0.06]];
+  for (const sg of [-1, 1]) {
+    parts.push(part(wingGeo(TS, sg), OD, wingCol(TS, { edge: BOOT, under: GY })));
+    parts.push(part(at(finGeo(FIN), 12.4 * sg, 2.0, 0), OD));
+  }
+  const body = mergeGeometries(parts);
+  // 主翼。発動機まで上反角がつき その外は水平に近い
+  const WS = [[2.6, 1.2, 11.5, 14.5, 0.17], [11, 2.7, 10.6, 12.2, 0.16], [26, 3.0, 8.4, 8.4, 0.13], [38, 3.2, 6.4, 5.0, 0.1], [40, 3.25, 5.4, 2.6, 0.07]];
+  const EX = 11;
+  const wing = (sign) => {
+    const ws = [part(wingGeo(WS, sign), OD, wingCol(WS, { edge: BOOT, under: GY }))];
+    const [yc, zl] = wingAtX(WS, EX);
+    const n = hull([[zl + 8.2, 1.2], [zl + 8.0, 2.45], [zl + 7.9, 2.5], [zl + 5.2, 2.65], [zl + 5.1, 2.65], [zl, 2.55, 2.2, 3.0], [zl - 8, 2.1, 1.6, 2.8], [zl - 15, 1.2, 0.8, 1.9], [zl - 19.5, 0.15]], 10);
+    ws.push(part(at(n, EX * sign, yc - 0.9, 0), OD, (px, py, pz) => (pz > zl + 7.95 ? DK : pz > zl + 5.15 ? OD2 : py < yc - 2.6 ? GY : 0)));
+    const sp = new THREE.ConeGeometry(0.75, 1.8, 8); sp.rotateX(Math.PI / 2);
+    ws.push(part(at(sp, EX * sign, yc - 0.9, zl + 8.9), OD2));
+    return at(mergeGeometries(ws), -WX * sign, 0, -WZ);
+  };
+  const props = mergeGeometries([-1, 1].map((sg) => { const [yc, zl] = wingAtX(WS, EX); return at(new THREE.PlaneGeometry(13.5, 13.5), EX * sg, yc - 0.9, zl + 9.1); }));
+  return { body, wingL: wing(-1), wingR: wing(1), props, wingAt: [WX, 0, WZ], tail: -30 };
+})();
+
 // 小型機（敵の戦闘機・噴進機と、味方の迎撃機）。形は似せるが、敵機には名前や記章を出さない
 function fighterModel(o) {
   const L = o.len, S = o.span / 2, C = o.col, UN = o.belly ?? C, DKc = 0x15191d, GL = 0x17313f, RED = 0xc8281e, WH = 0xeeeae0;
@@ -1166,6 +1203,7 @@ function fighterModel(o) {
 }
 const MODELS = {
   bomber: BOMBER,
+  medium: MEDIUM,
   fighter: fighterModel({ len: 22, span: 26, col: 0xc3ccd2, spin: 0xb8322a, tipCol: 0xb8322a, scoop: true, bubble: true, taper: 0.55 }),   // 液冷の銀の戦闘機
   gull: fighterModel({ len: 23, span: 28, col: 0x22344c, radial: true, gull: true, cowl: 0x1a2738 }),                              // 逆ガル翼の艦上機
   cat: fighterModel({ len: 22, span: 29, col: 0x2c4460, belly: 0xc9cfd2, radial: true, chord: 7.8, fat: 1.15, mid: true }),        // ずんぐりした艦上戦闘機
@@ -1942,7 +1980,7 @@ const LETTERS = [
 function buildQueue(d) {
   const q = [], g = d.g;
   const span = Math.min(34, 4 + d.count * 1.9);   // 出現は長くても34秒のうちに終える
-  const small = { size: 0.5, hp: 0.5, speed: 1.5, drops: 0, small: true };
+  const small = { size: 0.5, hp: 0.5, speed: 1.5, drops: 1, small: true };   // drops 1 = ロケットの斉射を1回
   if (g.has("column")) {
     const groups = Math.max(2, Math.round(d.count / 4));
     for (let k = 0; k < groups; k++) {
@@ -2009,7 +2047,7 @@ function spawn(e) {
   const halfW = Math.abs(z) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
   const x = e.x ?? rand(-0.7, 0.7) * Math.min(halfW, 420);
   const y = e.y ?? (boss ? 230 : paper ? rand(110, 200) : e.dive ? rand(250, 320) : low ? rand(55, 95) : rand(120, 240)) + (low ? 0 : hi());
-  const mesh = paper ? buildPaperPlane() : buildBomber(e.model);
+  const mesh = paper ? buildPaperPlane() : buildBomber(e.model || (e.small ? "medium" : undefined));
   const armored = !boss && !paper && !e.small && !e.gold && !e.model && (e.armored ?? Math.random() < def.armored);
   const size = (e.size ?? (boss ? 1.9 : armored ? 1.15 : 1)) * (e.model ? 1.25 : 1) * 2.3;
   mesh.scale.multiplyScalar(size);
@@ -2029,7 +2067,7 @@ function spawn(e) {
     // 急降下する機体は、頭上に来るころ屋根すれすれまで下りる
     vel: V(e.vx ?? (e.away ? 0 : -x * 0.04), e.dive ? (-(y - 85) * speed) / (Math.abs(z) - 120) : 0, e.away ? -speed * 1.15 : speed),
     drops: e.drops ?? (boss ? 6 : paper || e.away ? 0 : bombStage ? 3 : 1),
-    dropZ: bombStage ? z + rand(60, 160) : rand(-720, -480) - (y > 260 ? 120 : 0),   // 高い機体は早めに落とす（爆弾が画面の中を落ちていくように）
+    dropZ: e.small ? rand(-640, -520) : bombStage ? z + rand(60, 160) : rand(-720, -480) - (y > 260 ? 120 : 0),   // 高い機体は早めに落とす（爆弾が画面の中を落ちていくように）
     falling: false, fallT: 0, roll: 0, rollDir: 1, smokeT: 0, ph: Math.random() * 10,
     flash: 0, jolt: 0, stuck: null, stuckOff: null, dead: false, gone: false, age: 0, strafeN: 3, strafeT: 0
   };
@@ -2049,6 +2087,18 @@ function dropBomb(p, child = null) {
     pos: child ? p.pos.clone() : p.pos.clone().add(V(rand(-6, 6), -4, 0)),
     vel: child ? p.vel.clone().add(child) : V(p.vel.x * 0.5, -10, p.vel.z * 0.55)
   });
+}
+// ロケットの斉射。翼の下から3発を 前方の街へまっすぐ撃ちこむ（爆弾と同じく竹槍で落とせる）
+const rocketGeo = new THREE.CapsuleGeometry(0.9, 7, 3, 6);
+const rocketMat = new THREE.MeshLambertMaterial({ color: 0x6a6f72, emissive: 0xa04810 });
+function fireRockets(p) {
+  for (const k of [-1, 0, 1]) {
+    const mesh = new THREE.Mesh(rocketGeo, rocketMat);
+    scene.add(mesh);
+    const pos = p.pos.clone().add(V(k * 16 * p.size, -3, 0));
+    const aim = V(pos.x + k * 22 + rand(-12, 12), GROUND_Y, pos.z + 180 + rand(-25, 25));
+    bombs.push({ mesh, bomb: true, rocket: true, dead: false, trailT: 0, split: false, pos, vel: aim.sub(pos).normalize().multiplyScalar(rand(200, 240)) });
+  }
 }
 function ensureBar(t) {
   if (!t.bar && !t.boss) { t.bar = document.createElement("div"); t.bar.className = "hpb"; t.bar.innerHTML = "<i></i>"; document.body.appendChild(t.bar); }
@@ -2508,9 +2558,9 @@ function strafe(p) {
   st.hp = Math.max(0, st.hp - 1.2 * def.dmg);
   haptic(8);
 }
-function damageCity(amount, p) {
+function damageCity(amount, p, scale = 0.8) {
   st.hp = Math.max(0, st.hp - amount * def.dmg);
-  if (p) crashAt(p, 0.8);
+  if (p) crashAt(p, scale);
   else audio.boom(false, 0.7);
   shake = Math.max(shake, 5);
   haptic(35);
@@ -2635,7 +2685,7 @@ function update(dt, real) {
       p.pitch += (wantP - p.pitch) * Math.min(1, dt * 7);
       p.yaw += ((p.aimT > 0 ? p.aimYaw : 0) - p.yaw) * Math.min(1, dt * 7);
       p.mesh.rotation.x = p.paper ? Math.sin(st.t * 2 + p.ph) * 0.15 : p.pitch;
-      if (p.drops > 0 && p.app <= 0 && p.pos.z > p.dropZ) { dropBomb(p); p.drops--; p.dropZ += p.boss ? 110 : 160; }
+      if (p.drops > 0 && p.app <= 0 && p.pos.z > p.dropZ) { if (p.small) fireRockets(p); else dropBomb(p); p.drops--; p.dropZ += p.boss ? 110 : 160; }
       // 傷ついた機体は煙を引く
       if (p.hp < p.maxHp && !p.paper) {
         p.smokeT -= dt;
@@ -2665,13 +2715,13 @@ function update(dt, real) {
   }
 
   for (const b of bombs) {
-    b.vel.y -= 60 * dt;
+    if (!b.rocket) b.vel.y -= 60 * dt;
     b.pos.addScaledVector(b.vel, dt);
     b.mesh.position.copy(b.pos);
     b.mesh.lookAt(tmpV2.copy(b.pos).add(b.vel));
     b.mesh.rotateX(Math.PI / 2);
     b.trailT -= dt;
-    if (b.trailT <= 0) { b.trailT = 0.02; fx.emit(b.pos, V(0, 8, 0), COL.red, 15, 0.3, { drag: 1 }); }
+    if (b.trailT <= 0) { b.trailT = 0.02; fx.emit(b.pos, V(0, 8, 0), b.rocket ? COL.fire : COL.red, b.rocket ? 11 : 15, 0.3, { drag: 1 }); if (b.rocket) smoke.emit(b.pos, V(rand(-3, 3), rand(-3, 3), 0), COL.vapor, 6, 0.7, { drag: 0.3, grow: 8, alpha: 0.3 }); }
     if (b.split && b.vel.y < -58) {
       // 空中で三つに割れる
       b.dead = true;
@@ -2679,7 +2729,7 @@ function update(dt, real) {
       for (const sx of [-1, 0, 1]) dropBomb(b, V(sx * 30, 14, rand(-10, 10)));
       continue;
     }
-    if (b.pos.y < GROUND_Y + 2) { b.dead = true; st.landed++; damageCity(def.g.has("bombs") ? (b.mesh.scale.x < 1.2 ? 4 : 7) : 9, b.pos); }
+    if (b.pos.y < GROUND_Y + 2) { b.dead = true; st.landed++; damageCity(b.rocket ? 0.7 : def.g.has("bombs") ? (b.mesh.scale.x < 1.2 ? 4 : 7) : 9, b.pos, b.rocket ? 0.4 : 0.8); }
   }
 
   for (const s of spears) {
