@@ -2508,9 +2508,9 @@ function strafe(p) {
   st.hp = Math.max(0, st.hp - 1.2 * def.dmg);
   haptic(8);
 }
-function damageCity(amount, p, scale = 0.8) {
+function damageCity(amount, p) {
   st.hp = Math.max(0, st.hp - amount * def.dmg);
-  if (p) crashAt(p, scale);
+  if (p) crashAt(p, 0.8);
   else audio.boom(false, 0.7);
   shake = Math.max(shake, 5);
   haptic(35);
@@ -2656,8 +2656,7 @@ function update(dt, real) {
       if (!p.gone && (p.away ? p.pos.z < -1500 : p.pos.z > -50)) {   // 頭上を越えられた／逃げ切られた
         if (p.away) p.gone = true; else p.dead = true;   // 遠ざかる機体は、見えなくなるまで飛ばしておく
         p.bar?.remove(); p.bar = null;
-        if (p.boss) st.bossEscaped = true;
-        else if (!p.paper) damageCity(p.small ? 2 : p.fighter ? 2 : 6, tmpV.set(clamp(p.pos.x * 1.5, -200, 200), 0, rand(-560, -400)), p.small ? 0.45 : 0.7);   // 取りこぼした機体の被害は 見える場所の火柱で知らせる
+        if (p.boss) st.bossEscaped = true;   // 頭上を越えた機体は被害を与えない（被害は爆弾と機銃掃射だけ）
       }
       if (p.gone) { p.mesh.scale.setScalar(p.size * clamp(1 - (-p.pos.z - 1500) / 350, 0.001, 1)); if (p.pos.z < -1850) p.dead = true; }
     }
