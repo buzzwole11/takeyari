@@ -1980,7 +1980,7 @@ function buildQueue(d) {
     }
   }
   const known = Object.keys(ESC).filter((k) => FIRST.indexOf(k) + 1 < d.n);
-  if (known.length && !g.has("letters") && !g.has("mirror") && !g.has("horde")) for (let i = 0; i < Math.round(d.count * 0.3); i++) q.push({ at: 3 + rand(0, span), ...ESC[pick(known)] });
+  if (known.length && !g.has("letters") && !g.has("mirror") && !g.has("horde")) for (let i = 0; i < Math.round(d.count * 1.2); i++) q.push({ at: 3 + rand(0, span), ...ESC[pick(known)] });
   if (g.has("rush") && !g.has("swarm") && !g.has("letters")) {
     const groups = Math.min(7, 4 + Math.floor(d.n / 12));
     for (let k = 0; k < groups; k++) {
@@ -2626,6 +2626,8 @@ function update(dt, real) {
         p.vel.x = (Math.cos(st.t * f + p.ph) + (p.fighter ? 0.5 * Math.sin(st.t * f * 1.7 + p.ph * 2.3) : 0)) * p.zig - (p.fighter ? p.pos.x * 0.25 : 0);   // 戦闘機は二つの波を重ねて読みにくくする
       }
       if (p.wav && p.app <= 0) p.pos.y += Math.cos(st.t * 1.9 + p.ph * 1.7) * p.wav * dt;
+      // 戦闘機は画面の横の外へ出さない（その奥行きでの画面の半幅の85%まで）
+      if (p.fighter && !p.away) { const lim = Math.max(30, -p.pos.z * 0.956 + p.pos.y * 0.292) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 0.85; p.pos.x = clamp(p.pos.x, -lim, lim); }
       p.mesh.rotation.z = Math.sin(st.t * 0.7 + p.ph) * (p.paper ? 0.35 : 0.04) + p.jolt - (p.fighter ? p.vel.x * 0.006 : 0);
       // 機首の上げ下げ: 降下・上昇に合わせて傾き、掃射のあいだは撃つ先へ向ける
       p.aimT = Math.max(0, p.aimT - dt);
@@ -3394,6 +3396,7 @@ if (DEBUG) {
       // 画面の外と、一時停止ボタンの上は押せない
       .filter((s) => s && s.x > 4 && s.x < innerWidth - 4 && s.y > 4 && s.y < innerHeight - 4 && !(s.x > innerWidth - 70 && s.y < 130)),
     perfectWindow: () => perfectWin(),
+    fighters: () => planes.filter((p) => p.fighter && !p.falling && !p.dead && p.app <= 0).map((p) => ({ ...screenOf(p.pos), z: Math.round(p.pos.z) })),
     // 面を直接始める（見た目の確認用）。ups で強化段数も上書きできる
     goto: (n, ups = {}) => {
       if (ups.crew) { Object.assign(save.crew, ups.crew); save.team = Object.keys(ups.crew).slice(0, 4); delete ups.crew; }
