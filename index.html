@@ -1470,7 +1470,7 @@ function rebuildAllies(trial = null) {
       pilot: { interval: 3, dmg: 0 },
       chonai: { interval: 5.5, dmg: 1 }
     }[kind];
-    const maxHp = 2 + Math.floor(lv / 10);   // 何回狙われたら退避するか
+    const maxHp = 2 + Math.floor(lv / 15);   // 何回狙われたら退避するか
     allies.push({ kind, lv, root, person, timer: rand(0.5, 2), swing: 0, hp: maxHp, maxHp, out: false, duck: 0, btn: null, ...spec });
   };
   // 仕掛けの面では、まだ雇っていなくても助っ人として来てくれる
@@ -2514,8 +2514,8 @@ function finale(s) {
   }));
 }
 // 戦闘機の機銃掃射。赤い曳光弾が町へ走り、耐久を少し削る。
-// 30面からは屋根も狙う: 仲間のそばに着弾すると仲間は身を伏せ、続けて狙われると屋根の陰へ退避する（人が撃たれる絵にはしない）
-const RAID_FROM = 30;
+// 10面からは屋根も狙う: 仲間のそばに着弾すると仲間は身を伏せ、続けて狙われると屋根の陰へ退避する（人が撃たれる絵にはしない）
+const RAID_FROM = 10;
 // 撃つ先 g へ機首を向ける角度を決める（しばらくその角度を保つ）
 function aimAt(p, g) {
   const dz = Math.max(40, g.z - p.pos.z);
@@ -2527,7 +2527,7 @@ function strafe(p) {
   if (def.n >= RAID_FROM) {
     const up = allies.filter((a) => !a.out && a.kind !== "chonai");
     const r = Math.random();
-    if (up.length && r < 0.7) {
+    if (up.length && r < 0.8) {
       const a = up.reduce((m, x) => (x.hp < m.hp ? x : m));   // いちばん追いつめられている仲間を続けて狙う
       const g = a.root.position.clone().add(V(rand(-5, 5), 0.5, rand(-3, 3)));
       for (let k = 0; k < 12; k++) fx.emit(tmpV.copy(p.pos).lerp(g, k / 12), ZERO, COL.red, 5, 0.14 + k * 0.012, { drag: 0 });
@@ -2539,7 +2539,7 @@ function strafe(p) {
       if (--a.hp <= 0) retreat(a);
       return;
     }
-    if (r > 0.88) {
+    if (r > 0.92) {
       // こちらの屋根をかすめる
       const g = V(rand(-10, 10), -8, -16);
       for (let k = 0; k < 12; k++) fx.emit(tmpV.copy(p.pos).lerp(g, k / 12), ZERO, COL.red, 6, 0.14 + k * 0.012, { drag: 0 });
@@ -2699,7 +2699,7 @@ function update(dt, real) {
       }
       // 戦闘機は近づくと町を機銃掃射する
       if (p.fighter && !p.away && p.app <= 0 && p.pos.z > -440) {
-        // 30面からは高度を下げて屋根すれすれまで突っ込み、通りすぎたら上昇する
+        // 10面からは高度を下げて屋根すれすれまで突っ込み、通りすぎたら上昇する
         if (def.n >= RAID_FROM && !p.dove) { p.dove = true; p.vel.y = (-(p.pos.y - 60) * p.vel.z) / Math.max(80, -p.pos.z - 150); }
         if (p.dove && p.pos.z > -150 && p.vel.y < 0) p.vel.y = 70;
         if (p.strafeN > 0 && (p.strafeT -= dt) <= 0) { p.strafeN--; p.strafeT = 0.45; strafe(p); }
