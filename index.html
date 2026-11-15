@@ -505,7 +505,7 @@ const ESC = {
   jet: { model: "jet", hp: 2, speed: 3.4, drops: 0, zig: 60, wav: 20 },
   jet2: { model: "jet2", hp: 3.4, speed: 3.0, drops: 2, size: 1.12, zig: 50, wav: 16 }
 };
-const FAR = 900;   // 敵はこの距離ぶん奥から、速度を落としながら入ってくる
+const FAR = 900, FAR_UP = 1000;   // 敵は FAR ぶん奥 FAR_UP ぶん上から 速度を落としながら下りてくる
 const FIRST = Object.keys(GIMMICKS);
 // 31面からは「編隊の組み方」と「天候・武器」をひとつずつ掛け合わせる
 const FORMS = ["column", "vee", "swarm", "mirror", "letters", "zigzag", "basic", "swarm"];
@@ -2024,7 +2024,7 @@ function spawn(e) {
     mesh, mat, boss, paper, armored, size, hp, maxHp: hp, bar: null,
     giant: !!e.giant, gold: !!e.gold, small: !!e.small, away: !!e.away, zig: e.zig || 0, lit: 0,
     wav: e.wav || 0, kind: e.model || "bomber", aimT: 0, aimPitch: 0, aimYaw: 0, pitch: 0, yaw: 0, fighter: !!e.model, jet: e.model === "jet" || e.model === "jet2", app: e.away ? 0 : 1,
-    pos: V(x, y, e.away ? z : z - FAR),
+    pos: V(x, e.away ? y : y + FAR_UP, e.away ? z : z - FAR),
     // 急降下する機体は、頭上に来るころ屋根すれすれまで下りる
     vel: V(e.vx ?? (e.away ? 0 : -x * 0.04), e.dive ? (-(y - 85) * speed) / (Math.abs(z) - 120) : 0, e.away ? -speed * 1.15 : speed),
     drops: e.drops ?? (boss ? 6 : paper || e.away ? 0 : bombStage ? 3 : 1),
@@ -2187,7 +2187,8 @@ function futurePos(t, T) {
   const P = t.pos.clone();
   if (t.app > 0) {
     const aT = def.n === 1 ? 1.1 : 2.6, u0 = 1 - t.app, u1 = Math.min(1, u0 + T / aT);
-    P.z += FAR * ((1 - (1 - u1) ** 2) - (1 - (1 - u0) ** 2));
+    const k = (1 - (1 - u1) ** 2) - (1 - (1 - u0) ** 2);
+    P.z += FAR * k; P.y -= FAR_UP * k;
     T = Math.max(0, T - t.app * aT);
   }
   return P.addScaledVector(t.vel, T);
@@ -2611,7 +2612,8 @@ function update(dt, real) {
         const u0 = 1 - p.app;
         p.app = Math.max(0, p.app - dt / (def.n === 1 ? 1.1 : 2.6));
         const u1 = 1 - p.app;
-        p.pos.z += FAR * ((1 - (1 - u1) ** 2) - (1 - (1 - u0) ** 2));
+        const k = (1 - (1 - u1) ** 2) - (1 - (1 - u0) ** 2);
+        p.pos.z += FAR * k; p.pos.y -= FAR_UP * k;
       } else p.pos.addScaledVector(p.vel, dt);
       if (p.jet) {
         tmpV2.set(p.pos.x, p.pos.y, p.pos.z + p.mesh.userData.tail * p.size);
