@@ -1470,7 +1470,7 @@ function rebuildAllies(trial = null) {
       pilot: { interval: 3, dmg: 0 },
       chonai: { interval: 5.5, dmg: 1 }
     }[kind];
-    const maxHp = 3 + Math.floor(lv / 5);   // 何回狙われたら退避するか
+    const maxHp = 2 + Math.floor(lv / 10);   // 何回狙われたら退避するか
     allies.push({ kind, lv, root, person, timer: rand(0.5, 2), swing: 0, hp: maxHp, maxHp, out: false, duck: 0, btn: null, ...spec });
   };
   // 仕掛けの面では、まだ雇っていなくても助っ人として来てくれる
@@ -1489,7 +1489,8 @@ const recallCost = (a) => Math.round((15 + a.lv * 4) * (1 + (def?.n || 1) * 0.03
 function retreat(a) {
   a.out = true;
   a.swing = 0;
-  smoke.emit(a.root.position, V(0, 14, 0), COL.smoke, 16, 1.2, { drag: 0.5, grow: 16, alpha: 0.5 });
+  for (let k = 0; k < 4; k++) smoke.emit(a.root.position, V(rand(-8, 8), 14, rand(-4, 4)), COL.smoke, 20, 1.6, { drag: 0.5, grow: 20, alpha: 0.6 });
+  shockRing(a.root.position.clone().add(V(0, 6, 0)), 70, 0xff5a3a, 0.6);   // 退避の瞬間に赤い輪で目を引く
   const b = document.createElement("button");
   b.className = "recall mono";
   b.dataset.recall = String(allies.indexOf(a));
@@ -1518,7 +1519,7 @@ function updateAllies(dt) {
     // 伏せる・退避する・戻ってくる動き
     a.duck = Math.max(0, (a.duck || 0) - dt * 1.6);
     const low = a.out ? 1 : Math.min(1, a.duck * 2);
-    a.person.position.y += ((a.out ? -9 : -1.6 * low) - a.person.position.y) * Math.min(1, dt * 8);
+    a.person.position.y += ((a.out ? -9 : -1.6 * low) - a.person.position.y) * Math.min(1, dt * (a.out ? 2.5 : 8));   // 退避はゆっくり沈んで見せる
     a.person.rotation.x = -0.5 * low;
     if (a.out) continue;
     if (a.regen && !st.over) st.hp = Math.min(cityMax(), st.hp + a.regen * dt);
@@ -2526,8 +2527,8 @@ function strafe(p) {
   if (def.n >= RAID_FROM) {
     const up = allies.filter((a) => !a.out && a.kind !== "chonai");
     const r = Math.random();
-    if (up.length && r < 0.55) {
-      const a = pick(up);
+    if (up.length && r < 0.7) {
+      const a = up.reduce((m, x) => (x.hp < m.hp ? x : m));   // いちばん追いつめられている仲間を続けて狙う
       const g = a.root.position.clone().add(V(rand(-5, 5), 0.5, rand(-3, 3)));
       for (let k = 0; k < 12; k++) fx.emit(tmpV.copy(p.pos).lerp(g, k / 12), ZERO, COL.red, 5, 0.14 + k * 0.012, { drag: 0 });
       sparks(g, 14);
@@ -2538,7 +2539,7 @@ function strafe(p) {
       if (--a.hp <= 0) retreat(a);
       return;
     }
-    if (r > 0.8) {
+    if (r > 0.88) {
       // こちらの屋根をかすめる
       const g = V(rand(-10, 10), -8, -16);
       for (let k = 0; k < 12; k++) fx.emit(tmpV.copy(p.pos).lerp(g, k / 12), ZERO, COL.red, 6, 0.14 + k * 0.012, { drag: 0 });
