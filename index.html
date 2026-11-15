@@ -2029,7 +2029,7 @@ function spawn(e) {
     // 急降下する機体は、頭上に来るころ屋根すれすれまで下りる
     vel: V(e.vx ?? (e.away ? 0 : -x * 0.04), e.dive ? (-(y - 85) * speed) / (Math.abs(z) - 120) : 0, e.away ? -speed * 1.15 : speed),
     drops: e.drops ?? (boss ? 6 : paper || e.away ? 0 : bombStage ? 3 : 1),
-    dropZ: bombStage ? z + rand(60, 160) : rand(-600, -300) - (y > 260 ? 120 : 0),   // 高い機体は早めに落とす（爆弾が画面の中を落ちていくように）
+    dropZ: bombStage ? z + rand(60, 160) : rand(-720, -480) - (y > 260 ? 120 : 0),   // 高い機体は早めに落とす（爆弾が画面の中を落ちていくように）
     falling: false, fallT: 0, roll: 0, rollDir: 1, smokeT: 0, ph: Math.random() * 10,
     flash: 0, jolt: 0, stuck: null, stuckOff: null, dead: false, gone: false, age: 0, strafeN: 3, strafeT: 0
   };
