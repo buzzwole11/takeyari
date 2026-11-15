@@ -1362,26 +1362,50 @@ const crewUpCost = (c) => Math.round(c.cost * 0.6 * Math.pow(1.25, crewLv(c.id))
 const teamSlots = () => (save.best > 25 ? 4 : 3);
 // 人々の見た目（銭で買って、全員まとめて着替える）
 const CSKINS = [
-  { nm: "普段着", r: 0 }, { nm: "防空頭巾", r: 0, cloth: 0x2c3550, head: "hood" },
-  { nm: "割烹着", r: 0, cloth: 0xece6d6 }, { nm: "学生服", r: 0, cloth: 0x1c1e26 },
-  { nm: "祭り", r: 1, cloth: 0x1f4fa0, head: "band", hem: true }, { nm: "紅白", r: 1, cloth: 0xc8322a, head: "band", hem: true },
-  { nm: "忍び", r: 2, cloth: 0x2a1e3a, head: "hood" }, { nm: "金ぴか", r: 2, cloth: 0xe0b040, glow: 0x5a4000, head: "band" }
+  { nm: "普段着", r: 0, pat: "kasuri" }, { nm: "防空頭巾", r: 0, cloth: 0x2c3550, head: "hood", pat: "kasuri", ink: 0xc8d0e4 },
+  { nm: "割烹着", r: 0, cloth: 0xece6d6, pat: "pin", ink: 0xcfc6ae, legs: 0x2c3550 }, { nm: "学生服", r: 0, cloth: 0x1c1e26, legs: 0x16181e },
+  { nm: "祭り", r: 1, cloth: 0x1f4fa0, head: "band", hem: true, pat: "check", ink: 0x173c7c, legs: 0xf2ede0 }, { nm: "紅白", r: 1, cloth: 0xc8322a, head: "band", hem: true, pat: "stripe", ink: 0xf2ede0, legs: 0xf2ede0 },
+  { nm: "忍び", r: 2, cloth: 0x2a1e3a, head: "hood", pat: "mesh", ink: 0x6e5c92, legs: 0x1c1428 }, { nm: "金ぴか", r: 2, cloth: 0xe0b040, glow: 0x5a4000, head: "band", pat: "scale", ink: 0x9a6c14, legs: 0xb88a28 }
 ];
 const skinMat = new THREE.MeshLambertMaterial({ color: 0xe2c19c });
 const L_ = (hex, extra = {}) => new THREE.MeshLambertMaterial({ color: hex, ...extra });
+// 布の柄（絣 細縞 市松 太縞 鎖帷子 うろこ）を小さな絵にして服に貼る。同じ柄は使い回す
+const clothCache = {};
+function clothMat(sk, base) {
+  if (!sk.pat) return L_(base, { flatShading: true, emissive: sk.glow || 0 });
+  const hex = (h) => "#" + h.toString(16).padStart(6, "0");
+  const ink = sk.ink ?? new THREE.Color(base).lerp(new THREE.Color(0xffffff), 0.45).getHex();
+  const tex = (clothCache[sk.nm + base] ||= (() => {
+    const t = canvasTex(64, 64, (g) => {
+      g.fillStyle = hex(base); g.fillRect(0, 0, 64, 64);
+      g.fillStyle = g.strokeStyle = hex(ink);
+      if (sk.pat === "kasuri") for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { const ox = x * 16 + (y % 2 ? 8 : 0), oy = y * 16; g.fillRect(ox + 6, oy + 3, 3, 10); g.fillRect(ox + 3, oy + 6.5, 9, 3); }
+      if (sk.pat === "pin") for (let x = 0; x < 64; x += 8) g.fillRect(x, 0, 1.5, 64);
+      if (sk.pat === "stripe") for (let x = 0; x < 64; x += 16) g.fillRect(x, 0, 8, 64);
+      if (sk.pat === "check") for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if ((x + y) % 2) g.fillRect(x * 16, y * 16, 16, 16);
+      if (sk.pat === "mesh") { g.lineWidth = 1.6; for (let k = -64; k < 128; k += 8) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k + 64, 64); g.moveTo(k, 64); g.lineTo(k + 64, 0); g.stroke(); } }
+      if (sk.pat === "scale") { g.lineWidth = 2; for (let y = 0; y < 6; y++) for (let x = -1; x < 5; x++) { g.beginPath(); g.arc(x * 16 + (y % 2 ? 8 : 0) + 8, y * 12, 8, 0, Math.PI); g.stroke(); } }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(3, 2);
+    return t;
+  })());
+  return new THREE.MeshLambertMaterial({ map: tex, emissive: sk.glow || 0 });
+}
 function buildPerson(kind, ski = save.cskin) {
   // 人は空を向いて立つので、こちらから見えるのは背中。背中で誰だか分かるように作る
   const g = new THREE.Group();
   const sk = CSKINS[ski] || CSKINS[0];
   const base = { grandma: 0x7a5a6e, grandpa: 0x6f6a48, kid: 0x4a6a8a, fire: 0x26365a, monk: 0x8a5a2a, pilot: 0x6a5236, chonai: pick([0x56606a, 0x6a5a48, 0x4f5d4a]) }[kind];
   const cloth = sk.cloth ?? base;
-  const cm = L_(cloth, { flatShading: true, emissive: sk.glow || 0 });
+  const cm = clothMat(sk, cloth);
   const dark = L_(new THREE.Color(cloth).multiplyScalar(0.55).getHex(), { flatShading: true, emissive: sk.glow || 0 });
+  const legM = sk.legs != null ? L_(sk.legs, { flatShading: true, emissive: sk.glow || 0 }) : dark;
   const white = L_(0xf2ede0);
   const add = (geo, mat, x, y, z, rx = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, 0, rz); g.add(m); return m; };
   // 脚（もんぺ）と足
   for (const s of [-1, 1]) {
-    add(new THREE.CylinderGeometry(0.46, 0.34, 2.5, 7), dark, s * 0.48, 1.35, 0);
+    add(new THREE.CylinderGeometry(0.46, 0.34, 2.5, 7), legM, s * 0.48, 1.35, 0);
     add(new THREE.BoxGeometry(0.5, 0.25, 0.9), L_(0x2a2420), s * 0.48, 0.12, 0.12);
   }
   // 胴（前後に薄い）と帯、えり
@@ -1427,12 +1451,19 @@ function buildPerson(kind, ski = save.cskin) {
     add(B(0.22, 3.3, 0.1), L_(0x8c7a56), 0, 4.0, -0.7, 0, 0.75);
     add(B(1.0, 0.9, 0.45), L_(0x8c7a56), -1.0, 2.7, -0.4);
     add(B(1.04, 0.3, 0.5), L_(0x6b5c3e), -1.0, 3.05, -0.4);
+    add(B(0.8, 0.5, 0.06), white, 0.3, 4.55, -0.68);                                          // 背の名札
+    for (const y of [5.5, 6.0, 6.5]) add(new THREE.TorusGeometry(Math.sqrt(Math.max(0.05, 1.08 * 1.08 - (y - 5.95) ** 2)), 0.04, 4, 14), L_(0x4a4436), 0, y, 0, Math.PI / 2);   // 頭巾の刺し子の縫い目
+    add(new THREE.CylinderGeometry(0.34, 0.34, 0.9, 8), L_(0x55606a), 1.0, 2.6, -0.35);       // 水筒
+    for (const d of [-1, 1]) for (const y of [0.6, 1.0]) add(new THREE.TorusGeometry(0.4, 0.06, 4, 10), L_(0x8c7a56), d * 0.48, y, 0, Math.PI / 2);   // 巻き脚絆
   }
   if (sk.nm === "割烹着") {   // 白い三角巾と 背中で結んだひも
     cap(0.97, 0xf2ede0, 5.98, 0.56, -0.02);
     add(B(0.7, 0.4, 0.1), white, 0, 6.0, -0.98, 0.5);
     for (const d of [-1, 1]) { add(B(0.75, 0.36, 0.12), white, d * 0.42, 3.05, -0.72, 0, d * 0.5); add(B(0.16, 1.1, 0.08), white, d * 0.16, 2.4, -0.72, 0, d * 0.12); }
     add(B(0.22, 0.22, 0.16), white, 0, 3.0, -0.76);
+    add(new THREE.CylinderGeometry(1.02, 1.12, 1.5, 8, 1, true), two(0xf2ede0), 0, 2.4, 0).scale.z = 0.7;   // すそまである前掛け
+    for (const d of [-1, 1]) add(new THREE.TorusGeometry(0.33, 0.07, 4, 10), L_(0xd8d2c0), d * 1.14, 3.0, 0, Math.PI / 2);   // そで口のゴム
+    add(new THREE.CylinderGeometry(0.1, 0.1, 2.2, 5), L_(0x8a6a44), -1.5, 3.2, 0.3, 0.2, 0.25);              // しゃもじ代わりの すりこぎ
   }
   if (sk.nm === "学生服") {   // 学帽と 斜めがけの鞄
     cap(0.95, 0x14161c, 6.0, 0.5);
@@ -1440,18 +1471,30 @@ function buildPerson(kind, ski = save.cskin) {
     add(new THREE.TorusGeometry(0.95, 0.06, 5, 14), L_(0xd8b23a), 0, 6.14, 0, Math.PI / 2);
     add(B(0.2, 3.2, 0.1), L_(0x6a4a2a), 0, 4.0, -0.7, 0, -0.75);
     add(B(1.1, 0.85, 0.4), L_(0x7a5632), 1.0, 2.75, -0.38);
+    for (let k = 0; k < 5; k++) add(new THREE.SphereGeometry(0.1, 6, 4), L_(0xe8c050, { emissive: 0x3a2a00 }), 0, 4.75 - k * 0.42, 0.66);   // 金ボタン
+    add(new THREE.SphereGeometry(0.13, 6, 4), L_(0xe8c050, { emissive: 0x3a2a00 }), 0, 6.3, 0.92);            // 帽章
+    add(B(0.9, 0.08, 0.5), L_(0x14161c), 0, 6.02, 1.1);                                                       // 帽子のつば
+    for (const d of [-1, 1]) add(new THREE.TorusGeometry(0.4, 0.06, 4, 10), white, d * 0.48, 0.55, 0, Math.PI / 2);   // 白い脚絆
   }
   if (sk.nm === "祭り") {   // 法被の背の大紋と 白いえり
     add(new THREE.CircleGeometry(0.78, 18), L_(0xf2ede0), 0, 4.0, -0.69).rotation.y = Math.PI;
     add(new THREE.CircleGeometry(0.5, 18), L_(0xc8322a), 0, 4.0, -0.7).rotation.y = Math.PI;
     add(new THREE.CircleGeometry(0.22, 12), L_(0xf2ede0), 0, 4.0, -0.71).rotation.y = Math.PI;
     for (const d of [-1, 1]) add(new THREE.TorusGeometry(0.33, 0.09, 5, 10), white, d * 1.14, 4.4, 0, Math.PI / 2);
+    for (const d of [-1, 1]) add(B(0.22, 2.3, 0.08), white, d * 0.34, 3.9, 0.66, 0, d * -0.1);               // 前の白いえり
+    add(new THREE.CylinderGeometry(0.24, 0.24, 1.3, 8), L_(0x8a5a2a), -1.55, 2.9, 0.2, Math.PI / 2);         // 腰に下げた小太鼓
+    add(new THREE.CylinderGeometry(0.25, 0.25, 0.06, 8), white, -1.55, 2.9, 0.86, Math.PI / 2);
+    add(new THREE.ConeGeometry(0.5, 0.5, 4), L_(0xc8322a), 0.55, 6.75, -0.3, 0.3);                           // ねじり鉢巻きの飾り
+    for (const d of [-1, 1]) add(B(0.5, 0.12, 1.0), L_(0xd8c48a), d * 0.48, 0.06, 0.15);                     // わらじ
   }
   if (sk.nm === "紅白") {   // 白いしめ縄の帯と たすき
     add(new THREE.TorusGeometry(1.0, 0.2, 6, 16), white, 0, 2.75, 0, Math.PI / 2).scale.y = 0.7;
     add(B(0.26, 3.2, 0.1), white, 0, 4.0, -0.7, 0, 0.8);
     add(B(0.26, 3.2, 0.1), white, 0, 4.0, -0.71, 0, -0.8);
     add(new THREE.SphereGeometry(0.3, 6, 5), white, 0, 2.75, -0.85);
+    for (const d of [-1, 1]) add(B(0.3, 1.3, 0.06), white, d * 0.3, 2.0, -0.82, 0.15, d * 0.25);             // 帯から垂れる紙垂
+    for (const d of [-1, 1]) add(new THREE.TorusGeometry(0.33, 0.1, 5, 10), white, d * 1.14, 3.6, 0, Math.PI / 2);   // 白い手甲
+    add(new THREE.SphereGeometry(0.34, 8, 6), L_(0xc8322a), 0, 6.95, 0);                                     // 頭のてっぺんの赤い房
   }
   if (sk.nm === "忍び") {   // 背負った刀と 赤い襟巻き
     add(B(0.16, 3.7, 0.16), L_(0x15151a), 0, 4.3, -0.82, 0, 0.7);
@@ -1459,11 +1502,22 @@ function buildPerson(kind, ski = save.cskin) {
     add(B(0.7, 0.1, 0.34), L_(0xd8b23a), -1.12, 5.62, -0.82, 0, 0.7);
     add(new THREE.PlaneGeometry(0.55, 2.8), two(0xb8241c), 0.55, 4.5, -1.0, 0.4, -0.25);
     add(new THREE.TorusGeometry(0.5, 0.14, 5, 10), L_(0xb8241c), 0, 5.05, 0, Math.PI / 2);
+    add(B(1.7, 0.36, 0.1), L_(0x8a8f96, { emissive: 0x1a1c20 }), 0, 6.05, 0.86);                             // 額当て
+    for (const d of [-1, 1]) for (const y of [0.55, 0.95, 1.35]) add(new THREE.TorusGeometry(0.42, 0.05, 4, 10), L_(0x4a3a62), d * 0.48, y, 0, Math.PI / 2);   // 脚絆
+    for (const d of [-1, 1]) add(new THREE.TorusGeometry(0.33, 0.08, 4, 10), L_(0x4a3a62), d * 1.14, 3.2, 0, Math.PI / 2);   // 手甲
+    { const st = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.06, 4), L_(0xaab2ba, { emissive: 0x2a2e34 })); st.position.set(0.95, 2.75, -0.6); st.rotation.x = Math.PI / 2; g.add(st); }   // 帯の手裏剣
+    add(B(0.5, 0.5, 0.3), L_(0x15151a), -0.9, 2.75, -0.5);                                                   // 腰の道具袋
   }
   if (sk.nm === "金ぴか") {   // 赤い外套と 頭上の光の輪
     add(new THREE.PlaneGeometry(2.4, 3.6), two(0xb0241c), 0, 3.5, -0.9, 0.14);
     add(B(2.5, 0.3, 0.2), L_(0xf2d27a, { emissive: 0x5a4000 }), 0, 5.2, -0.6);
     add(new THREE.TorusGeometry(0.72, 0.07, 5, 18), flat(0xffe9a0), 0, 7.25, 0, Math.PI / 2);
+    for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; add(new THREE.ConeGeometry(0.16, 0.6, 4), L_(0xf2d27a, { emissive: 0x5a4000 }), Math.sin(a) * 0.62, 6.85, Math.cos(a) * 0.62); }   // 冠のとがり
+    add(new THREE.TorusGeometry(0.66, 0.1, 5, 14), L_(0xf2d27a, { emissive: 0x5a4000 }), 0, 6.55, 0, Math.PI / 2);
+    add(new THREE.SphereGeometry(0.16, 6, 5), L_(0xc8322a, { emissive: 0x3a0806 }), 0, 6.6, 0.68);           // 冠の紅玉
+    for (const d of [-1, 1]) add(new THREE.SphereGeometry(0.42, 8, 6), L_(0xf2d27a, { emissive: 0x5a4000 }), d * 1.2, 4.9, 0);   // 肩当て
+    add(new THREE.CylinderGeometry(1.0, 1.0, 0.36, 8), L_(0xb0241c), 0, 2.74, 0).scale.z = 0.7;              // 赤い帯
+    add(new THREE.SphereGeometry(0.26, 8, 6), L_(0xf2d27a, { emissive: 0x5a4000 }), 0, 2.74, 0.72);
   }
   // 左腕は下げ、右腕は肩から振る
   add(new THREE.CylinderGeometry(0.3, 0.26, 2.3, 6), cm, -1.12, 3.8, 0, 0, -0.12);
@@ -2328,7 +2382,7 @@ function paintSpear(hex) {
   col.needsUpdate = true;
 }
 const decoMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, emissive: 0x2a2a2a });
-const decoGlow = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+const decoGlow = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, color: 0x8a8a8a });   // 光りすぎないよう少し暗く
 const spearDeco = (i = save.skin) => (DECO[i] ? new THREE.Mesh(DECO[i], i === 9 ? decoGlow : decoMat) : null);
 // 物干し竿＋洗濯物
 const poleMat = new THREE.MeshLambertMaterial({ color: 0xd9c592, emissive: 0x2a2208 });
@@ -3251,7 +3305,7 @@ const SKINS = [
   { nm: "煤竹", r: 0, c: 0x8a5a38, e: 0x2a1608, t: 0xd8b890 }, { nm: "白竹", r: 0, c: 0xe8e2cc, e: 0x3a382c, t: 0xffffff },
   { nm: "朱塗り", r: 1, c: 0xd8382a, e: 0x3a0c08, t: 0xff8a70 }, { nm: "藍染", r: 1, c: 0x3a62c8, e: 0x0c1838, t: 0x8ab4ff },
   { nm: "紫竹", r: 1, c: 0x8a52c8, e: 0x220c38, t: 0xd0a0ff }, { nm: "金竹", r: 2, c: 0xe8b83a, e: 0x5a3e08, t: 0xffe08a, fx: "spark" },
-  { nm: "桜", r: 2, c: 0xf29abc, e: 0x3a1424, t: 0xffc4e0, fx: "petal" }, { nm: "鬼火", r: 2, c: 0x48e0c0, e: 0x0e6a58, t: 0x60ffd0, fx: "wisp" }
+  { nm: "桜", r: 2, c: 0xf29abc, e: 0x3a1424, t: 0xffc4e0, fx: "petal" }, { nm: "鬼火", r: 2, c: 0x48e0c0, e: 0x0a4038, t: 0x60ffd0, fx: "wisp" }
 ];
 // 見た目は銭で引くくじ（ガチャ）で手に入れる。確率は画面に出す。かぶったら4割戻る
 const RARE = ["並", "上", "極"], ODDS = [0.6, 0.3, 0.1];
@@ -3328,9 +3382,35 @@ function previewLook(now) {
       pv.cam.lookAt(0, 3.7, 0);
     }
     pv.scene.add(pv.obj);
+    // 極のスキンは粒を飛ばす（鬼火の火 桜の花びら 金竹のきらめき）
+    if (pv.pts) { pv.scene.remove(pv.pts); pv.pts.geometry.dispose(); pv.pts = null; }
+    const k = lookKind === "spear" && SKINS[save.skin]?.fx;
+    if (k) {
+      const N = k === "wisp" ? 46 : 26, geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(N * 3).fill(999), 3));
+      pv.pts = new THREE.Points(geo, new THREE.PointsMaterial({ map: softTex, color: k === "wisp" ? 0x50f0d0 : k === "petal" ? 0xffb0cc : 0xffe08a, size: k === "wisp" ? 3.2 : k === "petal" ? 1.5 : 1.3, transparent: true, depthWrite: false, blending: k === "petal" ? THREE.NormalBlending : THREE.AdditiveBlending }));
+      pv.pts.frustumCulled = false;
+      pv.pts.userData = { k, life: new Float32Array(N), vel: new Float32Array(N * 3) };
+      pv.scene.add(pv.pts);
+    }
   }
-  pv.t += Math.min(0.05, (now - pv.last) / 1000 || 0);
+  const pdt = Math.min(0.05, (now - pv.last) / 1000 || 0);
+  pv.t += pdt;
   pv.last = now;
+  if (pv.pts) {
+    const { k, life, vel } = pv.pts.userData, pos = pv.pts.geometry.attributes.position, m = pv.obj.children[0];
+    m.updateWorldMatrix(true, false);
+    for (let i = 0; i < life.length; i++) {
+      if ((life[i] -= pdt) <= 0) {
+        if (Math.random() > pdt * 14) { pos.setXYZ(i, 999, 999, 999); continue; }   // 少しずつ生まれる
+        const p = m.localToWorld(tmpV.set(rand(-0.6, 0.6), rand(-0.6, 0.6), k === "wisp" ? rand(-6, 13) : rand(-8, 12)));
+        pos.setXYZ(i, p.x, p.y, p.z);
+        life[i] = k === "wisp" ? rand(0.4, 0.9) : k === "petal" ? rand(1.2, 2.2) : rand(0.2, 0.5);
+        vel.set(k === "wisp" ? [rand(-0.5, 0.5), rand(2.5, 5), 0] : k === "petal" ? [rand(-1.5, 1.5), rand(-2.6, -1.2), 0] : [rand(-0.6, 0.6), rand(-0.3, 0.9), 0], i * 3);
+      } else pos.setXYZ(i, pos.getX(i) + vel[i * 3] * pdt + (k === "petal" ? Math.sin(pv.t * 3 + i) * pdt : 0), pos.getY(i) + vel[i * 3 + 1] * pdt, pos.getZ(i));
+    }
+    pos.needsUpdate = true;
+  }
   if (lookKind === "spear") { pv.obj.rotation.set(0.22, Math.PI / 2 + Math.sin(pv.t * 0.7) * 0.45, 0); pv.obj.children[0].rotation.z = pv.t * 0.9; }
   else for (const p of pv.obj.children) p.rotation.y = Math.PI + Math.sin(pv.t * 0.8) * 1.1;   // 背中を中心に左右へ振って見せる
   pv.r.render(pv.scene, pv.cam);
@@ -3568,9 +3648,10 @@ function frame(now) {
   handSpear.visible = mode === "play" && (st.ammo > 0 || k > 0.2);
   const sfx = SKINS[save.skin]?.fx;
   if (sfx && handSpear.visible && (handSpear.userData.fxT = (handSpear.userData.fxT || 0) - real) <= 0) {
-    handSpear.userData.fxT = sfx === "wisp" ? 0.04 : 0.11;
-    const at0 = handSpear.userData.sp.localToWorld(tmpV.set(rand(-0.5, 0.5), rand(-0.5, 0.5), sfx === "wisp" ? rand(2, 13) : rand(-3, 12))).clone();
-    if (sfx === "wisp") fx.emit(at0, V(rand(-1, 1), rand(2.5, 5), rand(-1, 1)), Math.random() < 0.3 ? SFX.white : SFX.wisp, rand(0.5, 1.1), rand(0.35, 0.7), { drag: 0.6, grav: -3 });
+    handSpear.userData.fxT = sfx === "wisp" ? 0.09 : 0.11;
+    // 鬼火の火は柄の手元寄りだけに小さく出す（穂先の先＝狙う空をふさがない）
+    const at0 = handSpear.userData.sp.localToWorld(tmpV.set(rand(-0.5, 0.5), rand(-0.5, 0.5), sfx === "wisp" ? rand(-5, 5) : rand(-3, 12))).clone();
+    if (sfx === "wisp") fx.emit(at0, V(rand(-0.6, 0.6), rand(1, 2.2), rand(-0.6, 0.6)), SFX.wisp, rand(0.22, 0.42), rand(0.25, 0.45), { drag: 0.6, alpha: 0.6 });
     else if (sfx === "petal") fx.emit(at0, V(rand(-2.5, 2.5), rand(-0.5, 1.5), rand(-1, 1)), SFX.petal, rand(0.3, 0.5), rand(0.8, 1.4), { drag: 0.8, grav: 2.5 });
     else fx.emit(at0, V(rand(-1, 1), rand(-0.5, 1.5), rand(-1, 1)), SFX.gold, rand(0.25, 0.5), rand(0.2, 0.45), { drag: 0.5 });
   }
