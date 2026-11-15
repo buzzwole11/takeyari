@@ -119,13 +119,13 @@
   #menu h1 span { color: var(--gold); }
   #menu .wallet { margin: 0 0 4px; }
   #start { font-size: 24px; padding: 18px 20px; margin-top: 12px; }
-  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: min(340px, 100%); }
-  .tile { padding: 8px 2px 8px; border: 1px solid var(--line); border-radius: 12px; background: rgba(10, 22, 30, 0.85); color: var(--paper); line-height: 1.2; min-height: 86px; }
-  .tile .g { display: block; font-size: 30px; font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif; }
-  .tile b { display: block; font-size: 16px; letter-spacing: 0.12em; margin-top: 2px; }
-  .tile small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .tile.on { border-color: var(--gold); box-shadow: 0 0 14px rgba(242, 196, 109, 0.45), inset 0 0 12px rgba(242, 196, 109, 0.14); }
-  .tile.on b, .tile.on .g { color: var(--gold); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); width: min(340px, 100%); flex: none; border-bottom: 2px solid var(--line); }
+  .tile { padding: 10px 2px 8px; border: 1px solid transparent; border-bottom: 0; border-radius: 12px 12px 0 0; background: rgba(10, 22, 30, 0.55); color: var(--muted); line-height: 1.2; margin-bottom: -2px; }
+  .tile b { display: block; font-size: 19px; letter-spacing: 0.14em; }
+  .tile small { display: block; font-size: 11px; margin-top: 3px; }
+  .tile.on { background: rgba(242, 196, 109, 0.16); border-color: var(--gold); border-bottom: 2px solid var(--gold); color: var(--paper); }
+  .tile.on b { color: var(--gold); }
+  #look .wallet { align-self: center; margin: 0 0 6px; }
   .primary { width: min(330px, 100%); padding: 15px 20px; font-size: 20px; font-weight: 800; letter-spacing: 0.1em; border: 0; border-radius: 8px; background: var(--gold); color: #1b1407; box-shadow: 0 8px 30px rgba(242, 196, 109, 0.3); margin-top: 10px; }
   .reward { width: min(330px, 100%); padding: 11px 18px; font-size: 16px; font-weight: 800; border: 1px solid rgba(143, 224, 214, 0.55); border-radius: 8px; background: rgba(20, 60, 64, 0.85); color: var(--cyan); margin-top: 8px; }
   .small { padding: 8px 14px; font-size: 13px; border: 1px solid var(--line); border-radius: 6px; background: rgba(8, 18, 26, 0.7); margin-top: 8px; color: var(--muted); }
@@ -318,9 +318,9 @@
   <div id="road"></div>
   <div class="wallet mono" id="menu-wallet"></div>
   <div class="tiles">
-    <button class="tile" data-tab="up"><span class="g">槍</span><b>強化</b><small id="tile-up"></small></button>
-    <button class="tile" data-tab="crew"><span class="g">人</span><b>仲間</b><small id="tile-crew"></small></button>
-    <button class="tile" data-tab="look"><span class="g">彩</span><b>見た目</b><small id="tile-look"></small></button>
+    <button class="tile" data-tab="up"><b>強化</b><small data-tile="up"></small></button>
+    <button class="tile" data-tab="crew"><b>仲間</b><small data-tile="crew"></small></button>
+    <button class="tile" data-tab="look"><b>スキン</b><small data-tile="look"></small></button>
   </div>
   <div class="shop" data-shop></div>
   <div class="shop" id="crew-shop" hidden></div>
@@ -359,9 +359,11 @@
 
 <!-- 見た目の画面。竹槍と人々それぞれに、持っているものの一覧と、銭で引くくじ -->
 <section id="look" class="screen" hidden>
-  <div class="look-head">
-    <button class="small" data-action="lookback">← もどる</button>
-    <span class="wallet mono" id="look-wallet"></span>
+  <div class="wallet mono" id="look-wallet"></div>
+  <div class="tiles">
+    <button class="tile" data-tab="up"><b>強化</b><small data-tile="up"></small></button>
+    <button class="tile" data-tab="crew"><b>仲間</b><small data-tile="crew"></small></button>
+    <button class="tile" data-tab="look"><b>スキン</b><small data-tile="look"></small></button>
   </div>
   <div class="tabs center"><button class="tab" data-look="spear">竹槍</button><button class="tab" data-look="crew">人々</button><span id="look-count" class="mono"></span></div>
   <canvas id="look-prev"></canvas>
@@ -1440,9 +1442,9 @@ function buildPerson(kind, ski = save.cskin) {
     add(B(1.1, 0.85, 0.4), L_(0x7a5632), 1.0, 2.75, -0.38);
   }
   if (sk.nm === "祭り") {   // 法被の背の大紋と 白いえり
-    add(new THREE.CircleGeometry(0.78, 18), flat(0xf2ede0), 0, 4.0, -0.69).rotation.y = Math.PI;
-    add(new THREE.CircleGeometry(0.5, 18), flat(0xc8322a), 0, 4.0, -0.7).rotation.y = Math.PI;
-    add(new THREE.CircleGeometry(0.22, 12), flat(0xf2ede0), 0, 4.0, -0.71).rotation.y = Math.PI;
+    add(new THREE.CircleGeometry(0.78, 18), L_(0xf2ede0), 0, 4.0, -0.69).rotation.y = Math.PI;
+    add(new THREE.CircleGeometry(0.5, 18), L_(0xc8322a), 0, 4.0, -0.7).rotation.y = Math.PI;
+    add(new THREE.CircleGeometry(0.22, 12), L_(0xf2ede0), 0, 4.0, -0.71).rotation.y = Math.PI;
     for (const d of [-1, 1]) add(new THREE.TorusGeometry(0.33, 0.09, 5, 10), white, d * 1.14, 4.4, 0, Math.PI / 2);
   }
   if (sk.nm === "紅白") {   // 白いしめ縄の帯と たすき
@@ -2066,7 +2068,7 @@ function buildQueue(d) {
     }
   } else if (g.has("letters")) {
     LETTERS.forEach((rows, k) => rows.forEach((row, r) => [...row].forEach((ch, c) => {
-      if (ch === "X") q.push({ at: 1.5 + k * 10, x: (c - 2) * 96, y: 300 - r * 50, z: -780, vx: 0, ...small, size: 0.55, speed: 0.75 });
+      if (ch === "X") q.push({ at: 1.5 + k * 7, x: (c - 2) * 96, y: 300 - r * 50, z: -780, vx: 0, ...small, size: 0.55, speed: 1.05, hp: 1.6 });   // 字の面は硬く速くして 護衛も付ける
     })));
   } else if (g.has("swarm")) {
     const horde = g.has("horde");
@@ -2089,7 +2091,7 @@ function buildQueue(d) {
     }
   }
   const known = Object.keys(ESC).filter((k) => FIRST.indexOf(k) + 1 < d.n);
-  if (known.length && !g.has("letters") && !g.has("mirror") && !g.has("horde")) for (let i = 0; i < Math.round(d.count * 1.2); i++) q.push({ at: 3 + rand(0, span), ...ESC[pick(known)] });
+  if (known.length && !g.has("mirror") && !g.has("horde")) for (let i = 0; i < Math.round(d.count * 1.2); i++) q.push({ at: 3 + rand(0, span), ...ESC[pick(known)] });
   if (g.has("rush") && !g.has("swarm") && !g.has("letters")) {
     const groups = Math.min(7, 4 + Math.floor(d.n / 12));
     for (let k = 0; k < groups; k++) {
@@ -2261,36 +2263,73 @@ const spearGeo = (() => {
 })();
 const spearMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x2c2e0c, side: THREE.DoubleSide });
 const goldMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0xb07a18, side: THREE.DoubleSide });
-// 竹槍の飾り。見た目ごとに 巻いた縄 金の環 房 布 葉 花びら 炎を足す（槍と同じ向き: z が穂先）。並びは SKINS と同じ
+// 竹槍の飾り。スキンごとに 縄 組ひも 金の環 房 紙垂 葉 花 火の玉を足す（槍と同じ向き: z が穂先）。並びは SKINS と同じ
 const DECO = (() => {
-  const ring = (z, hex, r = 0.74, t = 0.1) => part(at(new THREE.TorusGeometry(r, t, 5, 12), 0, 0, z), hex);
+  const TAU = Math.PI * 2;
+  const ring = (z, hex, r = 0.74, t = 0.1) => part(at(new THREE.TorusGeometry(r, t, 6, 16), 0, 0, z), hex);
+  // 柄に巻きつく ひも。turns 回まわりながら z0 から z1 へ進む
+  const helix = (z0, z1, turns, hex, r = 0.7, t = 0.075, ph = 0, dir = 1) => {
+    const n = Math.ceil(turns * 14);
+    const pts = Array.from({ length: n + 1 }, (_, k) => { const u = k / n, a = ph + dir * u * turns * TAU; return new THREE.Vector3(Math.sin(a) * r, Math.cos(a) * r, z0 + (z1 - z0) * u); });
+    return part(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), n * 2, t, 6), hex);
+  };
   const tassel = (z, hex, hex2) => [
-    part(at(new THREE.CylinderGeometry(0.05, 0.05, 0.8, 4), 0, -0.9, z), hex2),
-    part(at(new THREE.SphereGeometry(0.36, 7, 5), 0, -1.4, z), hex2),
-    part(at(new THREE.ConeGeometry(0.5, 2.2, 8, 1, true), 0, -2.6, z), hex)
+    part(at(new THREE.CylinderGeometry(0.05, 0.05, 0.8, 5), 0, -0.9, z), hex2),
+    part(at(new THREE.SphereGeometry(0.36, 10, 7), 0, -1.4, z), hex2),
+    part(at(new THREE.TorusGeometry(0.3, 0.07, 5, 12).rotateX(Math.PI / 2), 0, -1.72, z), hex2),
+    ...Array.from({ length: 9 }, (_, k) => { const a = (k / 9) * TAU; return part(at(new THREE.CylinderGeometry(0.07, 0.05, 2.3, 4), Math.sin(a) * 0.3, -2.9, z + Math.cos(a) * 0.3), k % 2 ? hex : hex2 === 0xf2c860 ? hex : hex); })
   ];
-  const ribbon = (z, hex, len = 5, w = 0.55, dx = 0) => { const g = new THREE.PlaneGeometry(w, len); g.rotateX(Math.PI / 2 - 0.22); return part(at(g, dx, -0.85 - len * 0.11, z - len / 2), hex); };
-  const leaf = (z, hex, sd) => { const g = new THREE.SphereGeometry(1, 6, 4); g.scale(0.32, 0.05, 1.5); g.rotateY(sd * 0.55); g.rotateZ(sd * 0.3); return part(at(g, sd * 1.15, 0.35, z + 1.2), hex); };
-  const petal = (k) => { const a = k * 2.4, g = new THREE.SphereGeometry(1, 5, 3); g.scale(0.26, 0.05, 0.34); g.rotateZ(-a); return part(at(g, Math.sin(a) * 0.72, Math.cos(a) * 0.72, -3 + k * 0.85), k % 3 ? 0xffb4d2 : 0xffe0ee); };
-  const flame = (k) => { const a = k * 1.9, g = new THREE.ConeGeometry(0.32, 1.9 + (k % 3) * 0.5, 5); g.rotateX(Math.PI / 2); return part(at(g, Math.sin(a) * 0.85, Math.cos(a) * 0.85, 4.5 + k * 0.95), k % 2 ? 0x8affe0 : 0xd8fff4); };
-  const rope = (z0, n, hex) => Array.from({ length: n }, (_, k) => ring(z0 + k * 0.34, hex, 0.7, 0.13));
+  const ribbon = (z, hex, len = 5, w = 0.55, dx = 0) => {
+    // 風になびく布（ゆるく波打たせる）
+    const g = new THREE.PlaneGeometry(w, len, 1, 10); g.rotateX(Math.PI / 2);
+    const p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) { const u = (len / 2 - p.getZ(i)) / len; p.setY(i, -u * len * 0.3 + Math.sin(u * 7) * 0.22 * u); p.setX(i, p.getX(i) + Math.sin(u * 5) * 0.25 * u); }
+    g.computeVertexNormals();
+    return part(at(g, dx, -0.8, z - len / 2), hex);
+  };
+  // 節から出る小枝と葉
+  const sprig = (z, a0, n = 3) => Array.from({ length: n }, (_, k) => {
+    const g = new THREE.SphereGeometry(1, 8, 5); g.scale(0.4, 0.045, 1.25); g.translate(0, 0, 1.6);
+    g.rotateY((k - (n - 1) / 2) * 0.5); g.rotateX(-0.75); g.rotateZ(a0);
+    return part(at(g, 0, 0, z), [0x58c84a, 0x3f9e36, 0x7ad860][k % 3]);
+  }).concat((() => { const g = new THREE.CylinderGeometry(0.05, 0.07, 1.3, 5); g.rotateX(Math.PI / 2); g.translate(0, 0, 0.9); g.rotateX(-0.75); g.rotateZ(a0); return part(at(g, 0, 0, z), 0x6a7a2e); })());
+  // 柄に咲く五弁の花
+  const flower = (z, a, sc = 1) => {
+    const ps = Array.from({ length: 5 }, (_, k) => { const g = new THREE.SphereGeometry(1, 7, 4); g.scale(0.2, 0.05, 0.3); g.translate(0, 0, 0.3); g.rotateY((k / 5) * TAU); return part(g, k % 2 ? 0xffc4dc : 0xffe2ee); });
+    ps.push(part(new THREE.SphereGeometry(0.1, 6, 4), 0xf2c860));
+    return ps.map((g) => { g.scale(sc, sc, sc); g.translate(0, 0.7, 0); g.rotateZ(a); return at(g, 0, 0, z); });
+  };
+  // 紙垂（稲妻形に折った白い紙）
+  const shide = (z, a) => Array.from({ length: 4 }, (_, k) => { const g = new THREE.PlaneGeometry(0.6, 0.72); g.rotateY(0.7); g.translate((k % 2 ? 0.3 : 0), -1.0 - k * 0.62, 0); g.rotateZ(a); return part(at(g, 0, 0, z), 0xffffff); });
+  const orb = (z, a, r = 1.15, sz = 0.26) => [part(at(new THREE.SphereGeometry(sz, 10, 7), Math.sin(a) * r, Math.cos(a) * r, z), 0xe8fff8), part(at(new THREE.ConeGeometry(sz * 0.8, sz * 4, 8).rotateX(-Math.PI / 2), Math.sin(a) * r, Math.cos(a) * r, z - sz * 2.2), 0x58e8c8)];
+  const GOLD = 0xe8b83a;
   const sets = [
     null,
-    [leaf(2.9, 0x4fae3a, 1), leaf(2.9, 0x3d9430, -1), leaf(-1.5, 0x4fae3a, -1)],                                              // 青竹: 枝に残った葉
-    [...rope(-0.9, 7, 0x2a1a10), ring(5, 0x2a1a10, 0.7, 0.13), ring(5.34, 0x2a1a10, 0.7, 0.13)],                               // 煤竹: 黒い縄巻き
-    [ring(1.2, 0xc8322a, 0.72, 0.12), ribbon(1.2, 0xffffff, 3.4, 0.8), ribbon(1.2, 0xffffff, 2.6, 0.8, 0.5)],                  // 白竹: 赤い結びと白い紙垂
-    [ring(-1.5, 0xf2c860, 0.8, 0.13), ring(2.9, 0xf2c860, 0.78, 0.13), ring(7.1, 0xf2c860, 0.76, 0.13), ...rope(0.2, 4, 0x1a1414)],   // 朱塗り: 金の環と黒漆の帯
-    [...rope(-0.4, 6, 0xf2ede0), ribbon(-0.4, 0x3a5ac0, 6.5, 0.7), ribbon(-0.4, 0xf2ede0, 5, 0.3, 0.45)],                      // 藍染: 白い組ひもと藍の布
-    [ring(-1.2, 0xf2c860, 0.74, 0.12), ...tassel(-1.2, 0xb47ae0, 0xf2c860), ring(4.6, 0xf2c860, 0.72, 0.1)],                   // 紫竹: 紫の房
-    [ring(-1.5, 0xfff0b0, 0.82, 0.15), ring(2.9, 0xfff0b0, 0.8, 0.15), ring(7.1, 0xfff0b0, 0.78, 0.15), ring(0.7, 0xfff0b0, 0.74, 0.08), ...tassel(-1.5, 0xe0342a, 0xfff0b0)],   // 金竹: 光る環と赤い房
-    [...Array.from({ length: 13 }, (_, k) => petal(k)), ribbon(-1.5, 0xff8ab8, 5.5, 0.5)],                                     // 桜: 花びらと桃色の布
-    [...Array.from({ length: 9 }, (_, k) => flame(k)), ring(2.9, 0x8affe0, 0.8, 0.1), ring(-1.5, 0x8affe0, 0.82, 0.1)]         // 鬼火: 穂先を包む青い炎
+    [...sprig(2.9, 0.4), ...sprig(-1.5, -1.9, 2), ...sprig(7.1, 2.6, 2)],                                                                  // 青竹: 節から伸びた小枝と葉
+    [helix(-1.2, 1.4, 9, 0x2a1a10, 0.7, 0.12), ring(-1.3, 0x1a100a, 0.72, 0.14), ring(1.5, 0x1a100a, 0.72, 0.14), helix(4.6, 5.8, 4, 0x2a1a10, 0.68, 0.12)],   // 煤竹: きつく巻いた黒い縄
+    [helix(0.7, 1.7, 3, 0xd8c48a, 0.72, 0.14), helix(0.7, 1.7, 3, 0xc4ae70, 0.72, 0.14, Math.PI), ...shide(1.2, 0.5), ...shide(1.2, -0.5)],   // 白竹: しめ縄と紙垂
+    [ring(-1.5, GOLD, 0.8, 0.13), ring(2.9, GOLD, 0.78, 0.13), ring(7.1, GOLD, 0.76, 0.13), helix(-0.9, 2.3, 5, 0x1a1414, 0.69, 0.1), helix(3.5, 6.5, 2, GOLD, 0.68, 0.05)],   // 朱塗り: 金の環 黒漆の巻き 金の線
+    [helix(-1.2, 2.4, 4, 0xf2ede0, 0.71, 0.08), helix(-1.2, 2.4, 4, 0xf2ede0, 0.71, 0.08, 0, -1), ring(-1.3, 0xf2ede0, 0.73, 0.1), ring(2.5, 0xf2ede0, 0.73, 0.1), ribbon(-1.3, 0x3a62c8, 6.5, 0.8), ribbon(-1.3, 0xf2ede0, 5, 0.3, 0.5)],   // 藍染: 菱に組んだ白ひもと藍の布
+    [ring(-1.2, GOLD, 0.74, 0.12), ...tassel(-1.2, 0xa060e0, GOLD), helix(3.2, 6.8, 3, GOLD, 0.67, 0.05), ring(7.1, GOLD, 0.74, 0.09)],   // 紫竹: 紫の房と金の線
+    [ring(-1.5, GOLD, 0.82, 0.15), ring(2.9, GOLD, 0.8, 0.15), ring(7.1, GOLD, 0.78, 0.15), helix(-1.2, 2.6, 3, 0xfff0b0, 0.7, 0.05), helix(3.2, 6.8, 3, 0xfff0b0, 0.68, 0.05), ...tassel(-1.5, 0xe0342a, GOLD)],   // 金竹: 金の環と彫りの線 赤い房
+    [...flower(-0.4, 0.3, 1.3), ...flower(1.2, 1.9, 1.1), ...flower(3.8, -0.9, 1.2), ...flower(5.6, 0.9, 1), ...flower(8, -2.2, 0.9), ...flower(-2.6, -1.6, 1), ribbon(-1.5, 0xff8ab8, 5.5, 0.55), ribbon(-1.5, 0xffe2ee, 4.2, 0.3, 0.4)],   // 桜: 柄に咲く花と桃色の布
+    [helix(-2, 11, 4, 0x58e8c8, 0.78, 0.045), helix(-2, 11, 4, 0xe8fff8, 0.78, 0.03, Math.PI), ...orb(0.5, 0.4), ...orb(4.2, 2.6, 1.3, 0.3), ...orb(8, -1.6, 1.05, 0.22), ...orb(10.6, 1.2, 0.95, 0.18)]   // 鬼火: 柄を巡る光の筋と 尾を引く火の玉
   ];
   return sets.map((ps) => ps && mergeGeometries(ps));
 })();
+// 竹の地色を塗り替える。明るさ（節の影 白い粉 切り口）は元のまま 色みだけスキンの色にする
+const spearBase = spearGeo.attributes.color.array.slice();
+function paintSpear(hex) {
+  const col = spearGeo.attributes.color, c = new THREE.Color(hex ?? 0);
+  for (let i = 0; i < col.count; i++) {
+    const r = spearBase[i * 3], g = spearBase[i * 3 + 1], b = spearBase[i * 3 + 2], k = (r + g + b) / 3 / 0.63;
+    if (hex == null) col.setXYZ(i, r, g, b); else col.setXYZ(i, Math.min(1, c.r * k), Math.min(1, c.g * k), Math.min(1, c.b * k));
+  }
+  col.needsUpdate = true;
+}
 const decoMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, emissive: 0x2a2a2a });
 const decoGlow = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
-const spearDeco = (i = save.skin) => (DECO[i] ? new THREE.Mesh(DECO[i], i === 7 || i === 9 ? decoGlow : decoMat) : null);
+const spearDeco = (i = save.skin) => (DECO[i] ? new THREE.Mesh(DECO[i], i === 9 ? decoGlow : decoMat) : null);
 // 物干し竿＋洗濯物
 const poleMat = new THREE.MeshLambertMaterial({ color: 0xd9c592, emissive: 0x2a2208 });
 const laundryTex = canvasTex(128, 64, (g) => {
@@ -3138,11 +3177,11 @@ function refreshShops() {
       + `<button data-crewup="${c.id}" class="mono ${save.coins >= uc ? "can" : ""}" ${save.coins >= uc ? "" : "disabled"}>育 ${COIN}${uc}</button></div>`;
   }).join("");
   renderLook();
-  $("tile-up").textContent = `計 Lv${UPS.reduce((n, u) => n + L(u.id), 0)}`;
   const nTeam = save.team.filter((id) => crewLv(id) > 0).length;
-  $("tile-crew").textContent = nTeam ? `${nTeam}人 出撃` : "まだいない";
-  $("tile-look").textContent = (SKINS[save.skin] || SKINS[0]).nm;
-  for (const b of document.querySelectorAll("[data-tab]")) b.classList.toggle("on", b.dataset.tab === tab);
+  const tile = { up: `計 Lv${UPS.reduce((n, u) => n + L(u.id), 0)}`, crew: nTeam ? `${nTeam}人 出撃` : "まだいない", look: (SKINS[save.skin] || SKINS[0]).nm };
+  for (const el of document.querySelectorAll("[data-tile]")) el.textContent = tile[el.dataset.tile];
+  const curTab = mode === "upgrade" && sub === "look" ? "look" : tab;
+  for (const b of document.querySelectorAll("[data-tab]")) b.classList.toggle("on", b.dataset.tab === curTab);
   $("menu").querySelector("[data-shop]").hidden = tab !== "up";
   $("crew-shop").hidden = tab !== "crew";
   $("menu").querySelector('[data-action="free"]').hidden = tab !== "up";
@@ -3208,11 +3247,11 @@ function pickSkin(kind, i) {
 // ---------------- 解放の道（面を進めるともらえるもの） ----------------
 // 竹槍の見た目（銭で買う）。t は投げたときの尾の色
 const SKINS = [
-  { nm: "竹", r: 0, c: 0xffffff, e: 0x2c2e0c, t: 0x9fe8e0 }, { nm: "青竹", r: 0, c: 0x9ff08a, e: 0x123a14, t: 0x8ff0a0 },
-  { nm: "煤竹", r: 0, c: 0xb08058, e: 0x2a1608, t: 0xd8b890 }, { nm: "白竹", r: 0, c: 0xf4f0e0, e: 0x3a382c, t: 0xffffff },
-  { nm: "朱塗り", r: 1, c: 0xff5a48, e: 0x3a0c08, t: 0xff8a70 }, { nm: "藍染", r: 1, c: 0x5a8ae0, e: 0x0c1838, t: 0x8ab4ff },
-  { nm: "紫竹", r: 1, c: 0xb47ae0, e: 0x220c38, t: 0xd0a0ff }, { nm: "金竹", r: 2, c: 0xffd870, e: 0x6a4a08, t: 0xffe08a },
-  { nm: "桜", r: 2, c: 0xffb4d2, e: 0x3a1424, t: 0xffc4e0 }, { nm: "鬼火", r: 2, c: 0x8affe0, e: 0x0a5a48, t: 0x60ffd0 }
+  { nm: "竹", r: 0, c: 0xb4c263, e: 0x2c2e0c, t: 0x9fe8e0 }, { nm: "青竹", r: 0, c: 0x58c84a, e: 0x123a14, t: 0x8ff0a0 },
+  { nm: "煤竹", r: 0, c: 0x8a5a38, e: 0x2a1608, t: 0xd8b890 }, { nm: "白竹", r: 0, c: 0xe8e2cc, e: 0x3a382c, t: 0xffffff },
+  { nm: "朱塗り", r: 1, c: 0xd8382a, e: 0x3a0c08, t: 0xff8a70 }, { nm: "藍染", r: 1, c: 0x3a62c8, e: 0x0c1838, t: 0x8ab4ff },
+  { nm: "紫竹", r: 1, c: 0x8a52c8, e: 0x220c38, t: 0xd0a0ff }, { nm: "金竹", r: 2, c: 0xe8b83a, e: 0x5a3e08, t: 0xffe08a, fx: "spark" },
+  { nm: "桜", r: 2, c: 0xf29abc, e: 0x3a1424, t: 0xffc4e0, fx: "petal" }, { nm: "鬼火", r: 2, c: 0x48e0c0, e: 0x0e6a58, t: 0x60ffd0, fx: "wisp" }
 ];
 // 見た目は銭で引くくじ（ガチャ）で手に入れる。確率は画面に出す。かぶったら4割戻る
 const RARE = ["並", "上", "極"], ODDS = [0.6, 0.3, 0.1];
@@ -3233,7 +3272,7 @@ function gacha(kind) {
 }
 function renderLook() {
   const kind = lookKind, list = kind === "spear" ? SKINS : CSKINS, cur = kind === "spear" ? save.skin : save.cskin;
-  const sw = (s) => (kind === "spear" ? "#" + new THREE.Color(s.c).multiply(new THREE.Color(0xb4c263)).getHexString() : "#" + (s.cloth ?? 0x7a5a6e).toString(16).padStart(6, "0"));
+  const sw = (s) => "#" + new THREE.Color(kind === "spear" ? s.c : s.cloth ?? 0x7a5a6e).getHexString();
   $("look-wallet").innerHTML = `${COIN}${save.coins}`;
   for (const b of document.querySelectorAll("[data-look]")) b.classList.toggle("on", b.dataset.look === kind);
   $("look-grid").innerHTML = list.map((s, i) => {
@@ -3251,7 +3290,7 @@ function renderLook() {
   if (!p.hidden) {
     const s = list[pulled.i];
     p.className = "r" + s.r;
-    p.innerHTML = `<em>${RARE[s.r]}</em><i style="background:${sw(s)}"></i><b class="mincho">${s.nm}</b><span class="mono">${pulled.dup ? `かぶり　${COIN}+${pulled.back}` : "新しい見た目"}</span>`;
+    p.innerHTML = `<em>${RARE[s.r]}</em><i style="background:${sw(s)}"></i><b class="mincho">${s.nm}</b><span class="mono">${pulled.dup ? `かぶり　${COIN}+${pulled.back}` : "新しいスキン"}</span>`;
     void p.offsetWidth; p.classList.add("in");
   }
 }
@@ -3296,6 +3335,7 @@ function previewLook(now) {
   else for (const p of pv.obj.children) p.rotation.y = Math.PI + Math.sin(pv.t * 0.8) * 1.1;   // 背中を中心に左右へ振って見せる
   pv.r.render(pv.scene, pv.cam);
 }
+const SFX = { wisp: new THREE.Color(0x50f0d0), white: new THREE.Color(0xe8fff8), petal: new THREE.Color(0xffb0cc), gold: new THREE.Color(0xffe08a) };
 const trailCol = new THREE.Color(0x9fe8e0);
 const ROAD = [
   { at: 3, nm: "祖母" }, { at: 6, nm: "祖父" }, { at: 8, coins: 100 }, { at: 10, nm: "子ども" }, { at: 12, coins: 200 }, { at: 15, nm: "消防団" },
@@ -3307,7 +3347,7 @@ const roadAt = (i) => (i < ROAD.length ? ROAD[i] : { at: 100 + (i - ROAD.length 
 const roadLabel = (r) => (r.coins ? `${COIN}${r.coins}` : r.nm);
 function applySkin() {
   const s = SKINS[save.skin] || SKINS[0];
-  spearMat.color.set(s.c);
+  paintSpear(save.skin ? s.c : null);
   spearMat.emissive.set(s.e);
   trailCol.set(s.t);
   const sp = handSpear.userData.sp;   // 手元の槍の飾りを付け替える
@@ -3394,7 +3434,7 @@ document.addEventListener("click", (e) => {
     persist(); $("rank-name").blur(); audio.buy(); rankLoad();
     return;
   }
-  if (b.dataset.tab) { tab = b.dataset.tab; say = ""; refreshShops(); audio.ui(); return; }
+  if (b.dataset.tab) { tab = b.dataset.tab; say = ""; if (mode !== "menu") setMode("menu"); else refreshShops(); audio.ui(); return; }
   if (b.dataset.look) { lookKind = b.dataset.look; pulled = null; refreshShops(); audio.ui(); return; }
   if (b.id === "gacha-btn") {
     if (gacha(lookKind)) { persist(); audio.star(pulled.dup ? 0 : 1 + (lookKind === "spear" ? SKINS : CSKINS)[pulled.i].r); haptic(pulled.dup ? 10 : 40); }
@@ -3526,6 +3566,14 @@ function frame(now) {
   const pull = input.charging ? clamp(input.t / chargeFull(), 0, 1) : 0;
   handSpear.position.set(1.9, -3.0 - k * 1.2 + pull * 0.25, -5.6 + pull * 1.3 - k * 2.5);
   handSpear.visible = mode === "play" && (st.ammo > 0 || k > 0.2);
+  const sfx = SKINS[save.skin]?.fx;
+  if (sfx && handSpear.visible && (handSpear.userData.fxT = (handSpear.userData.fxT || 0) - real) <= 0) {
+    handSpear.userData.fxT = sfx === "wisp" ? 0.04 : 0.11;
+    const at0 = handSpear.userData.sp.localToWorld(tmpV.set(rand(-0.5, 0.5), rand(-0.5, 0.5), sfx === "wisp" ? rand(2, 13) : rand(-3, 12))).clone();
+    if (sfx === "wisp") fx.emit(at0, V(rand(-1, 1), rand(2.5, 5), rand(-1, 1)), Math.random() < 0.3 ? SFX.white : SFX.wisp, rand(0.5, 1.1), rand(0.35, 0.7), { drag: 0.6, grav: -3 });
+    else if (sfx === "petal") fx.emit(at0, V(rand(-2.5, 2.5), rand(-0.5, 1.5), rand(-1, 1)), SFX.petal, rand(0.3, 0.5), rand(0.8, 1.4), { drag: 0.8, grav: 2.5 });
+    else fx.emit(at0, V(rand(-1, 1), rand(-0.5, 1.5), rand(-1, 1)), SFX.gold, rand(0.25, 0.5), rand(0.2, 0.45), { drag: 0.5 });
+  }
   shake = Math.max(0, shake - real * 30);
   const sway = mode !== "menu" && def?.g.has("roofmove") ? Math.sin(st.t * 0.55) * 44 : 0;
   homeRoof.position.x = sway;
