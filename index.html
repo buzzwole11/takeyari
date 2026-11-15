@@ -212,6 +212,10 @@
   .gem { display: inline-block; width: 0.72em; height: 0.72em; transform: rotate(45deg); background: linear-gradient(135deg, #e8fbff, #6ab8f2 55%, #2a62c8); margin: 0 0.42em 0 0.3em; vertical-align: 0.02em; border-radius: 2px; box-shadow: 0 0 8px rgba(120, 190, 255, 0.8); }
   #pgacha-btn { margin-top: 8px; background: linear-gradient(135deg, #cfe8ff, #7ab4f2); box-shadow: 0 8px 30px rgba(120, 180, 255, 0.35); }
   #pgacha-btn:disabled { opacity: 0.4; }
+  .packs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: min(340px, 100%); margin-top: 10px; }
+  .packs[hidden] { display: none; }
+  .packs button { padding: 9px 2px; border: 1px solid rgba(120, 180, 255, 0.6); border-radius: 10px; background: rgba(14, 30, 52, 0.9); color: var(--paper); font-size: 18px; font-weight: 800; line-height: 1.3; }
+  .packs button .cs { display: block; font-size: 13px; color: #a8d0ff; font-weight: 400; }
   .looks button { padding: 5px 2px; border: 1px solid var(--line); border-radius: 8px; background: rgba(10, 22, 30, 0.85); line-height: 1.25; }
   .looks button i { display: block; height: 7px; width: 70%; margin: 2px auto 3px; border-radius: 4px; }
   .looks button .nm { display: block; font-size: 13px; color: var(--paper); }
@@ -394,6 +398,8 @@
   <button class="primary" id="pgacha-btn"></button>
   <div class="odds" id="odds2">宝珠のくじ: 点線の枠の9種だけが 同じ確率で出る　／　かぶったら宝珠2が戻る</div>
   <button class="reward slim" id="gem-ad" data-action="gemad"><svg class="ic"><use href="#i-play"/></svg> 広告で <span class="gem"></span>+1 <span class="mono" id="gem-left"></span></button>
+  <div id="gem-shop" class="packs" hidden></div>
+  <div class="odds" id="odds4" hidden>買った宝珠はこの端末の中に保存されます。アプリを消したり機種を変えたりすると戻りません</div>
   <div class="odds" id="odds3" hidden>縁起物は 何戦かに一度 結果の画面に出る宝箱から出る。1つにつき銭 +2%</div>
 </section>
 
@@ -2610,7 +2616,10 @@ function burstRing(x, y) {
 // 手元の竹槍と握る手
 const handSpear = new THREE.Group();
 {
-  const sp = new THREE.Mesh(spearGeo, spearMat);
+  const handMat = spearMat.clone();   // 手元の槍だけ透かせるように 材質を分ける
+  handMat.transparent = true;
+  handSpear.userData.mat = handMat;
+  const sp = new THREE.Mesh(spearGeo, handMat);
   sp.rotation.set(0, Math.PI, Math.PI + 0.5);   // 斜めの切り口（中空）がこちらを向くように
   sp.scale.setScalar(0.33);
   sp.position.z = -1.0;
@@ -3362,6 +3371,20 @@ function openChest() {
   persist();
   fanfare([{ k: "宝箱", t: CHARMS[i][1], s: has ? `もう持っている縁起物<br>${COIN}+${coins + 100}` : `縁起物を手に入れた（銭 +2%）<br>${COIN}+${coins}` }, ...(gem ? [{ k: "宝箱", t: `${GEM}1`, s: "宝珠が入っていた" }] : [])]);
 }
+// 宝珠を買う（Android 版だけ。Google Play の決済を通す）。値段は Play から届いたものをそのまま出す
+const PACKS = [{ id: "gem_10", n: 10 }, { id: "gem_30", n: 30 }, { id: "gem_80", n: 80 }];
+const shop = window.TakeyariShop || null;
+let prices = {};
+window.__onPrices = (p) => { prices = p && typeof p === "object" ? p : {}; refreshShops(); };
+window.__onPurchase = (id) => {
+  const k = PACKS.find((x) => x.id === id);
+  if (!k) return;
+  save.gem += k.n;
+  persist();
+  refreshShops();
+  fanfare([{ k: "お買い上げ", t: `${GEM}${k.n}`, s: "宝珠を手に入れた" }]);
+};
+if (shop) setTimeout(() => shop.ready(), 0);   // ページの用意ができてから Play につなぐ
 // 宝珠のくじ。宝珠でしか引けず ここでしか出ないスキンが出る
 const PGACHA = 5, gemLeft = () => 3 - (save.gemad.day === today() ? save.gemad.n : 0);
 function pgacha() {
@@ -3526,6 +3549,9 @@ function renderLook() {
   const charm = kind === "charm";
   for (const id of ["look-prev", "gacha-btn", "odds1", "pgacha-btn", "odds2", "gem-ad"]) $(id).hidden = charm;
   $("odds3").hidden = !charm;
+  const packs = PACKS.filter((k) => prices[k.id]);
+  $("gem-shop").hidden = $("odds4").hidden = charm || !shop || !packs.length;
+  $("gem-shop").innerHTML = packs.map((k) => `<button data-buy="${k.id}">${GEM}${k.n}<span class="cs mono">${String(prices[k.id]).replace(/[<>&]/g, "")}</span></button>`).join("");
   $("pgacha-btn").disabled = save.gem < PGACHA;
   $("pgacha-btn").innerHTML = `宝珠のくじ　${GEM}${PGACHA}`;
   $("gem-left").textContent = `あと${gemLeft()}回`;
@@ -3643,7 +3669,8 @@ function applySkin() {
   trailCol.set(s.t);
   const sp = handSpear.userData.sp;   // 手元の槍の飾りを付け替える
   if (sp.userData.deco) sp.remove(sp.userData.deco);
-  if ((sp.userData.deco = spearDeco())) sp.add(sp.userData.deco);
+  handSpear.userData.mat.emissive.copy(spearMat.emissive);
+  if ((sp.userData.deco = spearDeco())) { sp.userData.deco.material = sp.userData.deco.material.clone(); sp.userData.deco.material.transparent = true; sp.add(sp.userData.deco); }
   rebuildAllies();   // 人々の着替えも反映
 }
 // 第n面を越えたときにもらえるものを渡し、見出しの配列を返す
@@ -3725,6 +3752,7 @@ document.addEventListener("click", (e) => {
   }
   if (b.dataset.tab) { tab = b.dataset.tab; say = ""; if (mode !== "menu") setMode("menu"); else refreshShops(); audio.ui(); return; }
   if (b.dataset.look) { lookKind = b.dataset.look; pulled = null; refreshShops(); audio.ui(); return; }
+  if (b.dataset.buy) { if (shop) shop.buy(b.dataset.buy); audio.ui(); return; }
   if (b.id === "pgacha-btn") {
     if (pgacha()) { persist(); audio.star(pulled.dup ? 0 : 3); haptic(pulled.dup ? 10 : 50); }
     refreshShops();
@@ -3868,22 +3896,23 @@ function frame(now) {
   const k = handSpear.userData.kick;
   handSpear.userData.kick = Math.max(0, k - real * 4);
   const pull = input.charging ? clamp(input.t / chargeFull(), 0, 1) : 0;
-  // 槍の向こうに敵や爆弾がいるあいだは 槍を下げて隠さない（槍の画面上の位置は 下げていないときに覚えておく）
+  // 槍の向こうに敵や爆弾がいるあいだは 槍を透かして隠さない（槍は動かさない）
   const hu = handSpear.userData;
-  if ((hu.hide || 0) < 0.02 && handSpear.visible) {
-    const sp = hu.sp, a = screenOf(sp.localToWorld(tmpV.set(0, 0, -6))), b = a && screenOf(sp.localToWorld(tmpV2.set(0, 0, 13)));
-    if (a && b) hu.seg = [a.x, a.y, b.x - a.x, b.y - a.y];
-  }
   let behind = false;
-  if (hu.seg && mode === "play") for (const t of [...planes, ...bombs]) {
-    if (t.dead || t.falling || t.gone) continue;
-    const q = screenOf(t.pos);
-    if (!q) continue;
-    const [ax, ay, dx, dy] = hu.seg, u = clamp(((q.x - ax) * dx + (q.y - ay) * dy) / (dx * dx + dy * dy || 1), 0, 1);
-    if (Math.hypot(q.x - ax - dx * u, q.y - ay - dy * u) < 50 + 16 * (t.size || 1)) { behind = true; break; }
+  if (mode === "play" && handSpear.visible) {
+    const a = screenOf(hu.sp.localToWorld(tmpV.set(0, 0, -6))), b = a && screenOf(hu.sp.localToWorld(tmpV2.set(0, 0, 13)));
+    if (a && b) for (const t of [...planes, ...bombs]) {
+      if (t.dead || t.falling || t.gone) continue;
+      const q = screenOf(t.pos);
+      if (!q) continue;
+      const dx = b.x - a.x, dy = b.y - a.y, u = clamp(((q.x - a.x) * dx + (q.y - a.y) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+      if (Math.hypot(q.x - a.x - dx * u, q.y - a.y - dy * u) < 30 + 12 * (t.size || 1)) { behind = true; break; }
+    }
   }
-  hu.hide = (hu.hide || 0) + ((behind ? 1 : 0) - (hu.hide || 0)) * Math.min(1, real * (behind ? 9 : 2));
-  handSpear.position.set(1.9 + hu.hide * 1.2, -3.0 - k * 1.2 + pull * 0.25 - hu.hide * 3.4, -5.6 + pull * 1.3 - k * 2.5);
+  hu.hide = (hu.hide || 0) + ((behind ? 1 : 0) - (hu.hide || 0)) * Math.min(1, real * (behind ? 10 : 4));
+  hu.mat.opacity = 1 - hu.hide * 0.78;
+  if (hu.sp.userData.deco) hu.sp.userData.deco.material.opacity = hu.mat.opacity;
+  handSpear.position.set(1.9, -3.0 - k * 1.2 + pull * 0.25, -5.6 + pull * 1.3 - k * 2.5);
   handSpear.visible = mode === "play" && (st.ammo > 0 || k > 0.2);
   const sfx = SKINS[save.skin]?.fx;
   if (sfx && handSpear.visible && (handSpear.userData.fxT = (handSpear.userData.fxT || 0) - real) <= 0) {
