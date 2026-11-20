@@ -118,8 +118,7 @@
   #menu h1 { font-size: 50px; line-height: 1; margin: 0 0 10px; letter-spacing: 0.06em; font-weight: 500; text-shadow: 0 6px 40px rgba(0, 0, 0, 0.8); }
   #menu h1 span { color: var(--gold); }
   #menu .wallet { margin: 0 0 4px; }
-  #start { font-size: 24px; padding: 12px 20px 10px; margin-top: 12px; }
-  #start small { display: block; font-size: 14px; font-weight: 700; letter-spacing: 0.1em; margin-top: 2px; opacity: 0.75; }
+  #start { font-size: 24px; padding: 18px 20px; margin-top: 12px; }
   /* 低い画面でも上が切れないように 上から積んで余りを題字の上に回す */
   #menu { justify-content: flex-start; padding-top: max(80px, env(safe-area-inset-top)); }
   #menu > * { flex-shrink: 0; }
@@ -198,6 +197,9 @@
   .pause-title { font-size: 30px; letter-spacing: 0.3em; margin-bottom: 22px; }
   .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   #res-road { color: var(--cyan); font-size: 17px; margin-top: 2px; letter-spacing: 0.08em; }
+  #auto-next { position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 11; width: min(300px, 86vw); padding: 9px 12px; border-radius: 999px; overflow: hidden; background: rgba(12, 24, 34, 0.94); border: 1px solid var(--gold); color: var(--gold); font-size: 14px; font-weight: 700; text-align: center; pointer-events: none; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); }
+  #auto-next i { position: absolute; inset: 0 auto 0 0; background: rgba(242, 196, 109, 0.25); }
+  #auto-next span { position: relative; }
   #res-goal { color: var(--gold); font-size: 15px; margin: 4px 0 6px; width: min(320px, 100%); }
   /* 次のごほうびまでの短い道 */
   .track.mini { display: flex; justify-content: center; margin: 8px auto 0; }
@@ -546,6 +548,7 @@
 </section>
 
 <!-- 解放の演出。画面いっぱいに光が回り 手に入れたものを大きく見せる。押すと次へ -->
+<div id="auto-next" hidden><i></i><span></span></div>
 <div id="unlock" hidden><div class="rays"></div><div class="ub"><small></small><b class="mincho"></b><span></span><em>押してつぎへ</em></div></div>
 
 <section id="rank" class="screen" hidden>
@@ -666,11 +669,30 @@ try {
   if (q && typeof q.day === "string" && Array.isArray(q.ids) && q.ids.length === 3 && q.ids.every((k) => typeof k === "string"))
     save.quest = { day: q.day, ids: q.ids, p: q.ids.map((_, i) => Math.max(0, Math.floor(q.p?.[i]) || 0)), got: q.ids.map((_, i) => q.got?.[i] === true), all: q.all === true };
 } catch { /* 壊れていても遊べる */ }
+// 開発者用: 実際に遊んでいる人の状態の写し（?dev&preset=miho）。画面の写真から書き写した値
+const DEV_PRESETS = {
+  miho: { stage: 195, up: { spear: 25, bundle: 20, breath: 5, city: 28, coin: 26 }, crew: { grandma: 1, grandpa: 30, kid: 27, fire: 1, monk: 24, pilot: 27 },
+    team: ["grandpa", "kid", "monk", "pilot"], etc: { coins: 968861, gem: 5, skin: 25 } }   // 2026-11-21 第195面の時点
+};
 // 開発者用: 一度 ?dev を付けて開くと その端末ではスキンと縁起物を全部持っている扱いになる（?dev=0 で解除）
 {
   const q = new URLSearchParams(location.search);
   if (q.has("dev")) save.dev = q.get("dev") !== "0";
   if (save.dev) { const all = (n) => [...Array(n).keys()]; save.own = { spear: all(30), crew: all(24) }; save.charms = all(24); }
+  // 開発者用: ?dev&up=20 で 強化を全部その段まで上げる（下げはしない）
+  const upTo = Math.floor(Number(q.get("up")));
+  if (save.dev && upTo > 0) for (const u of UPS) save.up[u.id] = Math.max(save.up[u.id], clamp(upTo, 0, u.max ?? 99));
+  const jump = Math.floor(Number(q.get("stage")));
+  // 面はちょうどその面にする（戻すこともできる）。一度効かせたら アドレスから外して 開き直しても掛け直さない
+  // ?dev&as=194 で 194面まで来た人の強化と仲間を見積もって作る（stage と合わせれば その強さで別の面を遊べる）
+  const as = Math.floor(Number(q.get("as"))), preset = DEV_PRESETS[q.get("preset")];
+  if (save.dev && (jump > 0 || as > 0 || preset)) setTimeout(() => {   // 道のりなどの定義が済んでから
+    if (as > 0) simulateTo(as);
+    if (preset) { Object.assign(save.up, preset.up); save.crew = { ...preset.crew }; save.team = [...preset.team]; if (!jump) save.stage = save.best = preset.stage; grantRoad(preset.stage - 1); grantBonus(preset.stage - 1); Object.assign(save, preset.etc); applySkin(); }   // 銭はごほうびを受け取ったあとで写しの値にそろえる
+    if (jump > 0) { save.stage = save.best = jump; if (!(as > 0) && !preset) { grantRoad(jump - 1); grantBonus(jump - 1); } }
+    persist(); rebuildAllies(); refreshShops();
+  });
+  if (save.dev && (q.has("stage") || q.has("up") || q.has("as") || q.has("preset"))) { q.delete("stage"); q.delete("up"); q.delete("as"); q.delete("preset"); history.replaceState(null, "", location.pathname + (q.size ? "?" + q : "")); }
 }
 const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch {} };
 // 番付（ネットのランキング）。預けるのは名前・越えた面の数・端末ごとの乱数IDだけ。つながらなくても遊べる
@@ -679,7 +701,7 @@ const rankOn = () => !!RANK_URL && (!DEBUG || location.search.includes("rank"));
 if (!save.uid) save.uid = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
 const rankPost = (path, body) => fetch(RANK_URL + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
 function rankSend() {
-  if (!rankOn() || !save.name || save.best < 2) return Promise.resolve();
+  if (!rankOn() || save.dev || !save.name || save.best < 2) return Promise.resolve();   // 開発者は面を飛ばせるので番付に載せない
   return rankPost("/score", { id: save.uid, name: save.name, stage: save.best - 1 }).catch(() => {});
 }
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
@@ -2337,12 +2359,12 @@ function startStage(n) {
   rebuildAllies(def.g.has("chonai") ? "chonai" : def.g.has("grandma") ? "grandma" : def.g.has("wingman") ? "wingman" : null);
   applyEnv(def);
   $("stage-tag").textContent = `第${n}面`;
-  $("stage-name").textContent = def.names;   // その面の仕掛け
+  $("stage-name").textContent = "";   // 面の中身は先に言わない
   updateObjective();
   $("wind").hidden = !def.wind;
   $("wind").textContent = def.wind > 0 ? "風 ≫≫≫" : "≪≪≪ 風";
   $("banner-num").textContent = `第${n}面`;
-  $("banner-name").textContent = def.names;
+  $("banner-name").textContent = "";
   $("banner-goal").innerHTML = miniRoad();
   $("banner").classList.add("show");
   bannerTimer = 2;
@@ -3559,6 +3581,22 @@ function nearMiss() {
   const r = 1 - left / Math.max(1, st.total);
   return `<b>${r >= 0.6 ? "惜しい" : "撃退まで"} ${Math.round(r * 100)}%</b>${bar(r)}<span>あと${Math.max(1, left)}機で撃退</span>`;
 }
+// 勝った結果画面で しばらく触らなければ 次の面へ自動で進む（そのたびに必ず広告を出す）。触るたびに数え直す
+const AUTO_NEXT = 8;
+let autoT = -1;
+function autoNext(real) {
+  const show = mode === "result" && autoT > 0;
+  // 画面の下に出す札（結果画面は長く 次へのボタンは下に隠れていることが多い）
+  $("auto-next").hidden = !show;
+  if (show) { $("auto-next").querySelector("span").textContent = `${Math.ceil(autoT)}秒後に次の面へ　触ると待つ`; $("auto-next").querySelector("i").style.width = `${(1 - autoT / AUTO_NEXT) * 100}%`; }
+  // 止めて数えるとき: 解放の演出が出ている 広告を見ている 画面が隠れている
+  if (!show || !$("unlock").hidden || window.__onReward || document.hidden) return;
+  if ((autoT -= real) > 0) return;
+  autoT = -1;
+  ads.interstitial(def.n, true);
+  startStage(save.stage);
+}
+document.addEventListener("pointerdown", () => { if (mode === "result" && autoT > 0) autoT = AUTO_NEXT; }, true);
 function endStage(win) {
   st.over = true;
   st.win = win;
@@ -3620,6 +3658,7 @@ function endStage(win) {
     if (!win) $("res-near").innerHTML = nearMiss();
     $("res-chest").hidden = save.plays % CHEST_EVERY !== 0;
     setMode("result");
+    autoT = win ? AUTO_NEXT : -1;
     if (st.cel.length) fanfare(st.cel);
   }, win ? 900 : 600);
 }
@@ -3829,7 +3868,7 @@ function refreshShops() {
   $("res-wallet").innerHTML = `${COIN}${save.coins}　${GEM}${save.gem}`;
   $("menu-wallet").innerHTML = `${COIN}${save.coins}<button class="gemplus mono" id="gem-open">${GEM}${save.gem}<i>＋</i></button>`;
   renderGems();
-  $("start").innerHTML = `出撃　第${save.stage}面<small>${stageDef(save.stage).names}</small>`;   // 次の面の仕掛けを先に見せる
+  $("start").textContent = `出撃　第${save.stage}面`;
   for (const shop of document.querySelectorAll("[data-shop]")) {
     shop.replaceChildren();
     shop.classList.toggle("free", freeUp);
@@ -3897,6 +3936,30 @@ function buyUpgrade(id, btn) {
   shop?.querySelector(`[data-up="${id}"]`)?.classList.add("pop");
 }
 // 仲間を雇う・出撃させる・育てる
+// 開発者用: 第n面まで越えた人の強化と仲間の見積もり。番付には面の数しか残らないので
+// 面ごとに稼ぐ銭（敵の数×2.5×稼ぎの倍率＋面の数 を星2つで1.25倍 指揮機の面は2倍）と道のりの銭を 一番安い強化か仲間から使っていった形にする
+// ponytail: 失敗のやり直しや配給 広告の倍は数えていないので 実際の人より少し弱めに出る
+function simulateTo(n) {
+  for (const u of UPS) save.up[u.id] = 0;
+  save.crew = {}; save.team = []; save.coins = 0; save.road = 0; save.bonus = 0;
+  for (let k = 1; k <= n; k++) {
+    save.best = k + 1;
+    const d = stageDef(k);
+    save.coins += Math.round((d.count * 2.5 * coinMul() + 3 + k) * 1.25 * (d.g.has("boss") ? 2 : 1));
+    grantRoad(k);
+    for (;;) {
+      const opts = [];
+      for (const u of UPS) if (!(u.max != null && L(u.id) >= u.max)) opts.push([upCost(u), () => save.up[u.id]++]);
+      for (const c of CREW) if (save.best > c.at) opts.push(crewLv(c.id) ? [crewUpCost(c), () => save.crew[c.id]++] : [c.cost, () => { save.crew[c.id] = 1; }]);
+      opts.sort((a, b) => a[0] - b[0]);
+      if (!opts.length || opts[0][0] > save.coins) break;
+      save.coins -= opts[0][0];
+      opts[0][1]();
+    }
+  }
+  grantBonus(n);
+  save.team = Object.keys(save.crew).sort((a, b) => save.crew[b] - save.crew[a]).slice(0, teamSlots());
+}
 function hireCrew(id) {
   const c = CREW.find((x) => x.id === id);
   if (crewLv(id) || save.best <= c.at || save.coins < c.cost) return false;
@@ -4251,8 +4314,8 @@ const ads = {
     window.__onReward = () => { window.__onReward = null; lastInterstitial = Date.now(); cb(); };
     if (this.native()) this.native().showRewarded(); else window.__onReward();
   },
-  interstitial(stage) {
-    if (stage >= 4 && this.native() && Date.now() - lastInterstitial > 180000) {
+  interstitial(stage, every = false) {   // every: 間をあけずに毎回出す（自動で次の面へ進むとき）
+    if (this.native() && (every || (stage >= 4 && Date.now() - lastInterstitial > 180000))) {
       lastInterstitial = Date.now();
       this.native().showInterstitial();
     }
@@ -4361,9 +4424,22 @@ window.addEventListener("keydown", (e) => {
   else if (mode === "pause") setMode("play");
   else if (mode === "upgrade") setMode("menu");
 });
+// 画面を離れても止めない。隠れている間はブラウザが描画を止めるので 1秒ごとに過ぎた時間ぶん動かす（描かずに進めるだけ）
+let bgT = 0, bgTimer = 0;
+function bgTick() {
+  const now = performance.now();
+  let left = Math.min(60, (now - bgT) / 1000);   // 長く隠すとブラウザがタイマーを1分おきまで間引くので 1分までは追いつかせる
+  bgT = now;
+  while (left > 0) {
+    const dt = Math.min(0.05, left);
+    left -= dt;
+    if (mode === "play") for (let i = later.length - 1; i >= 0; i--) if ((later[i].t -= dt) <= 0) later.splice(i, 1)[0].fn();
+    update(dt, dt);
+  }
+}
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) { if (mode === "play") setMode("pause"); save.last = Date.now(); persist(); }
-  else if (mode === "menu") checkGift();
+  if (document.hidden) { save.last = Date.now(); persist(); bgT = performance.now(); bgTimer = setInterval(bgTick, 1000); }
+  else { clearInterval(bgTimer); bgTick(); if (mode === "menu") checkGift(); }
   last = 0;
 });
 
@@ -4497,6 +4573,7 @@ function frame(now) {
   }
   if (bannerTimer > 0) { bannerTimer -= real; if (bannerTimer <= 0) $("banner").classList.remove("show"); }
 
+  autoNext(real);
   hudT += real;
   if (hudT > 0.05) { hudT = 0; updateHUD(); }
   fx.mat.uniforms.uScale.value = smoke.mat.uniforms.uScale.value = window.innerHeight * renderer.getPixelRatio() * 0.9;
