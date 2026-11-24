@@ -486,6 +486,37 @@
   .gemplus i { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; border: 2px solid #145a1e; background: linear-gradient(#9ef56c, #2fb344); color: #fff; font-size: 16px; line-height: 1; text-shadow: 0 1px 0 #145a1e, 1px 0 0 #145a1e, -1px 0 0 #145a1e, 0 -1px 0 #145a1e, 0.7px 0.7px 0 #145a1e, -0.7px 0.7px 0 #145a1e, 0.7px -0.7px 0 #145a1e, -0.7px -0.7px 0 #145a1e; }
   .opt { border: 2px solid #0e1f47; background: linear-gradient(#5b8fe0, #2b55a5); color: #fff; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 3px 0 #0b1838; }
 
+  /* 道のり: 板の上に 札を太い棒でつなぐ（済んだ札に印 次の札に「次」の札） */
+  #road { width: min(360px, 100%); margin: 4px 0 0; padding: 6px 0 4px; overflow: visible; border: 3px solid #0e1f47; border-radius: 16px; background: linear-gradient(rgba(47, 90, 163, 0.93), rgba(26, 53, 112, 0.93)); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.3), 0 4px 0 #0b1838, 0 8px 18px rgba(0, 0, 0, 0.45); }
+  .rd-head { display: flex; align-items: baseline; gap: 10px; padding: 0 12px 2px; font-size: 13px; color: #fff; text-shadow: 0 1.5px 0 #0b1838, 1.5px 0 0 #0b1838, -1.5px 0 0 #0b1838, 0 -1.5px 0 #0b1838, 1.0499999999999998px 1.0499999999999998px 0 #0b1838, -1.0499999999999998px 1.0499999999999998px 0 #0b1838, 1.0499999999999998px -1.0499999999999998px 0 #0b1838, -1.0499999999999998px -1.0499999999999998px 0 #0b1838; white-space: nowrap; overflow: hidden; }
+  .rd-head b { font-size: 16px; color: #ffd23f; letter-spacing: 0.1em; text-shadow: 0 1.5px 0 #3b1d00, 1.5px 0 0 #3b1d00, -1.5px 0 0 #3b1d00, 0 -1.5px 0 #3b1d00, 1.0499999999999998px 1.0499999999999998px 0 #3b1d00, -1.0499999999999998px 1.0499999999999998px 0 #3b1d00, 1.0499999999999998px -1.0499999999999998px 0 #3b1d00, -1.0499999999999998px -1.0499999999999998px 0 #3b1d00; }
+  .rscroll { overflow-x: auto; scrollbar-width: none; }
+  .rscroll::-webkit-scrollbar { display: none; }
+  #road .track { padding: 2px 6px; }
+  .rn { flex-basis: 68px; padding-top: 10px; color: #cfe0ff; }
+  .rn::before { top: 31px; height: 8px; background: #0b1838; box-shadow: 0 0 0 2px #0b1838; }
+  .rn.done::before, .rn.now::before { background: linear-gradient(#ffe766, #ff9e0d); }
+  .rn .dot { z-index: 1; width: 46px; height: 46px; border-radius: 12px; border: 3px solid #0e1f47; background: linear-gradient(#6aa6ff, #2c5bb3); color: #fff; font-size: 20px; text-shadow: 0 1.5px 0 #0e1f47, 1.5px 0 0 #0e1f47, -1.5px 0 0 #0e1f47, 0 -1.5px 0 #0e1f47, 1.0499999999999998px 1.0499999999999998px 0 #0e1f47, -1.0499999999999998px 1.0499999999999998px 0 #0e1f47, 1.0499999999999998px -1.0499999999999998px 0 #0e1f47, -1.0499999999999998px -1.0499999999999998px 0 #0e1f47; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45), 0 3px 0 #0b1838; }
+  .rn b { color: #fff; font-weight: 800; text-shadow: 0 1.5px 0 #0b1838, 1.5px 0 0 #0b1838, -1.5px 0 0 #0b1838, 0 -1.5px 0 #0b1838, 1.0499999999999998px 1.0499999999999998px 0 #0b1838, -1.0499999999999998px 1.0499999999999998px 0 #0b1838, 1.0499999999999998px -1.0499999999999998px 0 #0b1838, -1.0499999999999998px -1.0499999999999998px 0 #0b1838; }
+  .rn > span { margin-top: 2px; padding: 0 6px; border-radius: 999px; background: rgba(0, 0, 0, 0.35); color: #e4f0ff; font-size: 10px; }
+  .rn.done { opacity: 1; }
+  .rn.done .dot { background: linear-gradient(#8a94a6, #525b6c); color: #e4e8f0; }
+  .rn .dot .coin, .rn .dot .gem { font-size: 24px; margin: 0; }
+  .rn.done .dot::after { content: "✓"; position: absolute; right: -7px; bottom: -6px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #145a1e; background: linear-gradient(#9ef56c, #2fb344); color: #fff; font: 900 13px/16px sans-serif; text-shadow: none; filter: none; }
+  .rn.now .dot { border-radius: 50%; border-color: #6b3400; background: linear-gradient(#fff07a, #ffb414); color: #6b3400; text-shadow: none; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.7), 0 3px 0 #8a4400, 0 0 14px rgba(255, 210, 63, 0.7); }
+  .rn.now b, .rn.next b { color: #ffd23f; }
+  .rn.next .dot { border-color: #ffd23f; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45), 0 3px 0 #0b1838, 0 0 0 2px #0e1f47, 0 0 16px rgba(255, 210, 63, 0.8); }
+  .rn.next .dot::before { content: "次"; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); padding: 0 7px; border-radius: 999px; border: 2px solid #3a0800; background: #e8392b; color: #fff; font: 900 11px/15px sans-serif; text-shadow: none; }
+  .rn.boss .dot { border-color: #3a0800; background: linear-gradient(#ff7a5a, #b0241c); color: #fff; }
+  .rn.boss b { color: #ffb08a; }
+  /* 仲間の立ち姿 */
+  #crew-pv { width: min(340px, 100%); margin-bottom: 8px; border: 3px solid #0e1f47; border-radius: 16px; background: radial-gradient(ellipse at 50% 80%, rgba(110, 160, 230, 0.6), rgba(14, 30, 70, 0.95)); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.25), 0 4px 0 #0b1838; overflow: hidden; }
+  #crew-prev { display: block; width: 100%; height: 170px; }
+  #crew-cap { padding: 6px 10px 8px; font-size: 13px; color: #fff; background: rgba(0, 0, 0, 0.3); text-shadow: 0 1.2px 0 #0b1838, 1.2px 0 0 #0b1838, -1.2px 0 0 #0b1838, 0 -1.2px 0 #0b1838, 0.84px 0.84px 0 #0b1838, -0.84px 0.84px 0 #0b1838, 0.84px -0.84px 0 #0b1838, -0.84px -0.84px 0 #0b1838; }
+  #crew-cap b { color: #ffd23f; font-size: 15px; }
+  .crow { cursor: pointer; }
+  .crow.sel { box-shadow: 0 0 0 3px #ffd23f, 0 4px 0 #0b1838; }
+
   /* 題字と勝ち負け */
   #menu h1 { color: #fff; font-weight: 800; text-shadow: 0 3px 0 #2a1200, 3px 0 0 #2a1200, -3px 0 0 #2a1200, 0 -3px 0 #2a1200, 2.0999999999999996px 2.0999999999999996px 0 #2a1200, -2.0999999999999996px 2.0999999999999996px 0 #2a1200, 2.0999999999999996px -2.0999999999999996px 0 #2a1200, -2.0999999999999996px -2.0999999999999996px 0 #2a1200, 0 8px 0 #2a1200, 0 12px 30px rgba(0, 0, 0, 0.8); }
   #menu h1 span { color: #ffd23f; }
@@ -562,6 +593,7 @@
     </div>
   </div>
   <div class="shop" data-shop></div>
+  <div id="crew-pv" hidden><canvas id="crew-prev"></canvas><div id="crew-cap"></div></div>
   <div class="shop" id="crew-shop" hidden></div>
   <div id="shop-say" hidden></div>
   <button class="reward slim" data-action="free"><svg class="ic"><use href="#i-play"/></svg> 広告で 強化を1回タダ <span class="mono" data-free></span></button>
@@ -4107,10 +4139,10 @@ function refreshShops() {
   // 仲間の棚
   $("crew-shop").innerHTML = CREW.map((c) => {
     const lv = crewLv(c.id), head = `<span class="cic">${c.ic}</span>`;
-    if (save.best <= c.at) return `<div class="crow lock">${head}<div class="cnm"><b>${c.nm}</b><small>第${c.at}面で解放</small></div></div>`;
-    if (!lv) return `<div class="crow">${head}<div class="cnm"><b>${c.nm}</b><small>${c.say}</small></div><button data-hire="${c.id}" class="${save.coins >= c.cost ? "can" : ""}" ${save.coins >= c.cost ? "" : "disabled"}>雇う ${COIN}${c.cost}</button></div>`;
+    if (save.best <= c.at) return `<div class="crow lock" data-cid="${c.id}">${head}<div class="cnm"><b>${c.nm}</b><small>第${c.at}面で解放</small></div></div>`;
+    if (!lv) return `<div class="crow ${crewSel === c.id ? "sel" : ""}" data-cid="${c.id}">${head}<div class="cnm"><b>${c.nm}</b><small>${c.say}</small></div><button data-hire="${c.id}" class="${save.coins >= c.cost ? "can" : ""}" ${save.coins >= c.cost ? "" : "disabled"}>雇う ${COIN}${c.cost}</button></div>`;
     const on = save.team.includes(c.id), uc = crewUpCost(c), t = crewTier(lv), tier = TIERS[c.id] ? TIERS[c.id][t] + (t < 4 ? `　Lv${TIER_AT[t + 1]}で${TIERS[c.id][t + 1]}` : "") : c.say;   // 次の段階がいつ来るかも見せる
-    return `<div class="crow ${on ? "on" : ""}">${head}<div class="cnm"><b>${c.nm}<i>Lv${lv}</i></b><small>${tier}</small></div>`
+    return `<div class="crow ${on ? "on" : ""} ${crewSel === c.id ? "sel" : ""}" data-cid="${c.id}">${head}<div class="cnm"><b>${c.nm}<i>Lv${lv}</i></b><small>${tier}</small></div>`
       + `<button data-team="${c.id}">${on ? "出撃" : "待機"}</button>`
       + `<button data-crewup="${c.id}" class="${save.coins >= uc ? "can" : ""}" ${save.coins >= uc ? "" : "disabled"}>育 ${COIN}${uc}</button></div>`;
   }).join("");
@@ -4123,6 +4155,8 @@ function refreshShops() {
   document.body.dataset.tab = curTab;
   $("menu").querySelector("[data-shop]").hidden = tab !== "up";
   $("crew-shop").hidden = tab !== "crew";
+  $("crew-pv").hidden = tab !== "crew";
+  crewCap();
   $("menu").querySelector('[data-action="free"]').hidden = tab !== "up";
   $("shop-say").textContent = tab === "crew" ? say || `出撃は${teamSlots()}人まで` : "";
   $("shop-say").hidden = tab !== "crew";
@@ -4303,6 +4337,49 @@ function renderLook() {
   }
 }
 
+// 仲間のタブの上の立ち姿。ふだんは出撃する顔ぶれを並べ 行を押した人がいればその人だけを大きく見せる
+let crewSel = null;
+const cv = { key: "", t: 0, last: 0 };
+const crewShown = () => (crewSel ? [crewSel] : save.team.filter((id) => crewLv(id) > 0));
+function crewCap() {
+  const ids = crewShown(), c = CREW.find((x) => x.id === crewSel);
+  $("crew-prev").hidden = !ids.length;
+  if (c) {
+    const lv = crewLv(c.id), t = crewTier(Math.max(1, lv));
+    $("crew-cap").innerHTML = lv ? `<b>${c.nm}</b> Lv${lv}　${c.id === "pilot" ? crewSay(c).replace(/^飛行兵　/, "") : TIERS[c.id][t] + (t < 4 ? `　次は Lv${TIER_AT[t + 1]}で${TIERS[c.id][t + 1]}` : "")}` : `<b>${c.nm}</b>　雇うと出撃できる　${c.say}`;
+  } else $("crew-cap").innerHTML = ids.length ? `出撃する仲間 ${ids.length}人　行を押すと一人ずつ見られる` : "まだ仲間がいない　雇うとここに並ぶ";
+}
+function previewCrew(now) {
+  const c = $("crew-prev"), ids = crewShown();
+  if (!ids.length) return;
+  if (!cv.r) {
+    cv.r = new THREE.WebGLRenderer({ canvas: c, alpha: true, antialias: true });
+    cv.scene = new THREE.Scene();
+    cv.scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x4a4438, 1.6));
+    const d = new THREE.DirectionalLight(0xfff0d8, 1.9);
+    d.position.set(3, 6, 8);
+    cv.scene.add(d);
+    cv.cam = new THREE.PerspectiveCamera(30, 2, 0.1, 200);
+  }
+  const w = c.clientWidth, h = c.clientHeight, pr = Math.min(2, devicePixelRatio);
+  if (w && c.width !== Math.round(w * pr)) { cv.r.setPixelRatio(pr); cv.r.setSize(w, h, false); cv.cam.aspect = w / h; cv.cam.updateProjectionMatrix(); }
+  const key = ids.map((id) => id + crewTier(Math.max(1, crewLv(id)))).join() + save.cskin;
+  if (key !== cv.key) {
+    cv.key = key;
+    if (cv.obj) cv.scene.remove(cv.obj);
+    cv.obj = new THREE.Group();
+    const gap = 3.6;
+    ids.forEach((id, i) => { const p = buildPerson(id, save.cskin, crewTier(Math.max(1, crewLv(id)))); p.position.x = (i - (ids.length - 1) / 2) * gap; cv.obj.add(p); });
+    cv.scene.add(cv.obj);
+    cv.cam.position.set(0, 3.8, ids.length > 3 ? 17.5 : 16);   // 頭から足まで入る遠さ
+    cv.cam.lookAt(0, 3.3, 0);
+  }
+  cv.t += Math.min(0.05, (now - cv.last) / 1000 || 0);
+  cv.last = now;
+  cv.obj.children.forEach((p, i) => { p.rotation.y = Math.PI + Math.sin(cv.t * 0.8 + i * 0.7) * 1.1; });   // 背中を中心に左右へ振る
+  cv.r.render(cv.scene, cv.cam);
+}
+
 // 見た目の画面の上に いま選んでいる見た目を立体で回して見せる（小さな別の描画先）
 const pv = { key: "", t: 0, last: 0 };
 function previewLook(now) {
@@ -4436,9 +4513,11 @@ function renderRoad() {
   const all = roadNodes(), s = save.stage;
   const past = all.filter((n) => n.at < s).slice(-3), next = all.filter((n) => n.at >= s).slice(0, 12);
   const node = (n, cls) => `<div class="rn ${cls} ${n.boss ? "boss" : ""}"><div class="dot">${nodeIc(n)}</div><b>${n.nm}</b><span>第${n.at}面</span></div>`;
-  $("road").innerHTML = `<div class="track">${past.map((n) => node(n, "done")).join("")}${node({ at: s, ic: "今", nm: "いま" }, "now")}${next.map((n, i) => node(n, i ? "" : "next")).join("")}</div>`;
+  const k = next[0].at - s + 1;
+  $("road").innerHTML = `<div class="rd-head"><b>道のり</b><span>${k <= 1 ? "この面で" : `あと${k}面で`} ${next[0].lb}</span></div>`
+    + `<div class="rscroll"><div class="track">${past.map((n) => node(n, "done")).join("")}${node({ at: s, ic: "今", nm: "いま" }, "now")}${next.map((n, i) => node(n, i ? "" : "next")).join("")}</div></div>`;
   const now = $("road").querySelector(".now");
-  $("road").scrollLeft = now.offsetLeft - now.offsetWidth - 6;   // 過ぎた節を1つだけ見せる
+  now.parentNode.parentNode.scrollLeft = now.offsetLeft - now.offsetWidth - 6;   // 過ぎた節を1つだけ見せる
 }
 
 // ---------------- 毎日の配給と、留守のあいだの見張りの報酬 ----------------
@@ -4609,6 +4688,12 @@ const ads = {
 };
 
 // ---------------- ボタン ----------------
+$("crew-shop").addEventListener("click", (e) => {
+  const r = e.target.closest("[data-cid]");
+  if (!r || e.target.closest("button") || r.classList.contains("lock")) return;
+  crewSel = crewSel === r.dataset.cid ? null : r.dataset.cid;
+  refreshShops(); audio.ui();
+});
 document.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b || b.disabled) return;
@@ -4876,6 +4961,7 @@ function frame(now) {
   fx.mat.uniforms.uScale.value = smoke.mat.uniforms.uScale.value = window.innerHeight * renderer.getPixelRatio() * 0.9;
   composer.render();
   if (mode === "upgrade" && sub === "look") previewLook(now);
+  if (mode === "menu" && tab === "crew") previewCrew(now);
   requestAnimationFrame(frame);
 }
 
