@@ -161,6 +161,7 @@
   .res-head { display: flex; align-items: baseline; justify-content: center; gap: 12px; }
   #res-stage { font-size: 15px; color: var(--gold); letter-spacing: 0.2em; }
   #res-title { font-size: 34px; margin: 0; font-weight: 500; letter-spacing: 0.1em; }
+  #res-share { margin-top: 6px; }
   #poster { width: min(330px, 100%); aspect-ratio: 600 / 440; border-radius: 4px; margin-top: 8px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
   #stars { font-size: 40px; letter-spacing: 6px; margin-top: 4px; line-height: 1.1; }
   #stars span { display: inline-block; color: rgba(255, 255, 255, 0.15); }
@@ -502,6 +503,7 @@
 <section id="result" class="screen" hidden>
   <div class="res-head"><span id="res-stage" class="mincho">第1面</span><h2 id="res-title" class="mincho">撃退</h2></div>
   <canvas id="poster" width="600" height="440"></canvas>
+  <button class="small" id="res-share" hidden>この新聞を共有</button>
   <div id="stars"><span>★</span><span>★</span><span>★</span></div>
   <div id="res-gain" class="mono"></div>
   <div id="res-road" class="mincho" hidden></div>
@@ -3725,10 +3727,21 @@ function endStage(win) {
     if (!win) $("res-near").innerHTML = nearMiss();
     $("res-chest").hidden = save.plays % CHEST_EVERY !== 0;
     $("res-noads").hidden = !shop || !prices.no_ads || save.noAds;
+    $("res-share").hidden = !window.TakeyariShare && !navigator.share;
     setMode("result");
     autoT = win ? AUTO_NEXT : -1;
     if (st.cel.length) fanfare(st.cel);
   }, win ? 900 : 600);
+}
+
+// 勝敗の新聞を画像で送る。Android は TakeyariShare に PNG を渡す。ブラウザは Web Share
+function sharePoster() {
+  const text = `竹槍防空 ${$("res-stage").textContent} ${$("res-title").textContent}\nhttps://buzzwole11.github.io/takeyari/`;
+  if (window.TakeyariShare) return window.TakeyariShare.share($("poster").toDataURL("image/png").split(",")[1], text);
+  $("poster").toBlob((b) => {
+    const files = [new File([b], "takeyari.png", { type: "image/png" })];
+    navigator.share(navigator.canShare?.({ files }) ? { files, text } : { text }).catch(() => {});
+  });
 }
 
 // ---------------- 解放の演出 ----------------
@@ -4515,6 +4528,7 @@ document.addEventListener("click", (e) => {
   if (b.dataset.buy) { if (shop) shop.buy(b.dataset.buy); audio.ui(); return; }
   if (b.id === "pp-open" || b.id === "tk-open") { $("pp-frame").src = b.id === "pp-open" ? "privacy.html" : "tokushoho.html"; $("pp").hidden = false; audio.ui(); return; }
   if (b.id === "pp-close") { $("pp").hidden = true; audio.ui(); return; }
+  if (b.id === "res-share") { autoT = -1; sharePoster(); audio.ui(); return; }
   if (b.id === "gem-open" || b.id === "res-noads") { autoT = -1; openGems(); audio.ui(); return; }
   if (b.id === "quest-open") { renderQuest(); $("quest").hidden = false; audio.ui(); return; }
   if (b.id === "quest-close") { $("quest").hidden = true; audio.ui(); return; }
