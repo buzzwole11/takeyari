@@ -140,6 +140,8 @@
   .shop button .ic { display: block; font-size: 34px; margin-top: 4px; font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif; }
   .shop button .nm { display: block; font-size: 12px; color: var(--muted); }
   .shop button .lv { position: absolute; top: 4px; right: 6px; font-size: 10px; color: var(--muted); }
+  .shop button .fx { display: block; font-size: 10px; color: var(--paper); opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shop button .nx { display: block; font-size: 10px; color: var(--cyan); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .shop button .cs { display: block; font-size: 13px; color: var(--gold); margin-top: 3px; }
   .shop button.can { border-color: rgba(242, 196, 109, 0.75); box-shadow: 0 0 12px rgba(242, 196, 109, 0.35), inset 0 0 10px rgba(242, 196, 109, 0.12); animation: glow 1.4s ease-in-out infinite; }
   .shop button.pop { animation: popup 0.35s ease-out; }
@@ -217,8 +219,8 @@
   .badge::after { content: "!"; position: absolute; top: -5px; right: -5px; width: 19px; height: 19px; border-radius: 50%; background: #e8392b; color: #fff; font: 800 13px/19px sans-serif; text-align: center; box-shadow: 0 0 0 2px rgba(4, 9, 16, 0.8); animation: bdg 1.1s ease-in-out infinite; z-index: 2; }
   @keyframes bdg { 50% { transform: scale(1.18); } }
   /* タイトルの左の丸ボタン（お題 配給表） */
-  .side { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 108px; display: flex; gap: 14px; }
-  .sideb { position: relative; width: 54px; height: 54px; padding: 0; margin: 0; border-radius: 50%; border: 2px solid rgba(242, 196, 109, 0.7); background: radial-gradient(circle at 35% 30%, #3a4a58, #101c26); color: var(--gold); font: 700 22px "Yu Mincho", serif; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6); }
+  .side { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 100px; display: flex; gap: 10px; }
+  .sideb { position: relative; width: 46px; height: 46px; padding: 0; margin: 0; border-radius: 50%; border: 2px solid rgba(242, 196, 109, 0.7); background: radial-gradient(circle at 35% 30%, #3a4a58, #101c26); color: var(--gold); font: 700 22px "Yu Mincho", serif; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6); }
   .sideb small { position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); font: 700 10px sans-serif; color: var(--paper); white-space: nowrap; text-shadow: 0 1px 3px #000; }
   /* お題と配給表の札 */
   .pop { background: rgba(4, 9, 16, 0.82); justify-content: center; z-index: 12; }
@@ -234,6 +236,19 @@
   .qrow button { grid-row: 1 / span 3; grid-column: 2; margin: 0; min-width: 76px; padding: 8px 6px; font-size: 13px; }
   .qrow button.go { background: linear-gradient(#6fd06a, #2f9a3a); color: #fff; border-color: #bff0b0; font-weight: 800; }
   .qall { margin: 6px 0 10px; font-size: 13px; color: var(--paper); }
+  .rb-now { font-size: 15px; color: var(--paper); margin: 2px 0 8px; }
+  .rb-gain { padding: 10px; border: 1px solid var(--gold); border-radius: 10px; background: rgba(242, 196, 109, 0.12); color: var(--gold); font-size: 15px; line-height: 1.7; margin-bottom: 8px; }
+  .rb-gain b { font-size: 24px; }
+  .rb-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; text-align: left; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .rb-list div { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; line-height: 1.6; }
+  .rb-list b { display: block; color: var(--paper); font-size: 13px; }
+  #rb-go.sure { background: #e8392b; color: #fff; }
+  .xf-sec { border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+  .xf-sec > b { display: block; color: var(--paper); font-size: 14px; margin-bottom: 4px; }
+  .xf-sec .primary { margin-top: 8px; padding: 11px 16px; font-size: 16px; }
+  .xf-sec .rank-nm { margin: 4px auto 0; }
+  #xf-code { font-size: 26px; letter-spacing: 0.08em; color: var(--gold); padding: 8px 0 2px; -webkit-user-select: text; user-select: text; }
+  #xf-get.sure { background: #e8392b; color: #fff; }
   .cal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 4px 0 10px; }
   .cal div { position: relative; border: 1px solid var(--line); border-radius: 8px; padding: 6px 2px 5px; font-size: 11px; color: var(--muted); background: rgba(255, 255, 255, 0.04); line-height: 1.5; }
   .cal div b { display: block; font-size: 14px; color: var(--paper); }
@@ -310,6 +325,13 @@
   .gem { display: inline-block; width: 0.72em; height: 0.72em; transform: rotate(45deg); background: linear-gradient(135deg, #e8fbff, #6ab8f2 55%, #2a62c8); margin: 0 0.42em 0 0.3em; vertical-align: 0.02em; border-radius: 2px; box-shadow: 0 0 8px rgba(120, 190, 255, 0.8); }
   #pgacha-btn { margin-top: 8px; background: linear-gradient(135deg, #cfe8ff, #7ab4f2); box-shadow: 0 8px 30px rgba(120, 180, 255, 0.35); }
   #pgacha-btn:disabled { opacity: 0.4; }
+  #gs-special { display: flex; flex-direction: column; gap: 8px; width: min(340px, 100%); margin-top: 10px; }
+  .sp { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; text-align: left; padding: 10px 12px; border: 1px solid var(--gold); border-radius: 10px; background: linear-gradient(135deg, rgba(60, 44, 14, 0.95), rgba(20, 16, 8, 0.95)); color: var(--paper); }
+  .sp b { font-size: 17px; color: var(--gold); }
+  .sp small { grid-column: 1; font-size: 11px; color: var(--paper); opacity: 0.85; line-height: 1.4; }
+  .sp .cs { grid-row: 1 / span 2; grid-column: 2; font-size: 15px; font-weight: 800; color: #1b1407; background: var(--gold); padding: 6px 10px; border-radius: 8px; }
+  .sp.own { border-color: var(--line); background: rgba(10, 22, 30, 0.85); }
+  .sp.own .cs { background: none; color: var(--cyan); }
   .packs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: min(340px, 100%); margin-top: 10px; }
   .packs[hidden] { display: none; }
   .packs button { padding: 9px 2px; border: 1px solid rgba(120, 180, 255, 0.6); border-radius: 10px; background: rgba(14, 30, 52, 0.9); color: var(--paper); font-size: 18px; font-weight: 800; line-height: 1.3; }
@@ -446,8 +468,9 @@
   </div>
   <button class="small mincho" id="rank-open" hidden>番付</button>
   <div class="side">
-    <button class="sideb" id="quest-open">題<small>毎日のお題</small></button>
-    <button class="sideb" id="cal-open">暦<small>配給表</small></button>
+    <button class="sideb" id="quest-open">題<small>お題</small></button>
+    <button class="sideb" id="cal-open">暦<small>配給</small></button>
+    <button class="sideb" id="rb-open" hidden>転<small>転生</small></button>
   </div>
   <h1 class="mincho">竹槍<span>防空</span></h1>
   <div id="road"></div>
@@ -463,7 +486,7 @@
   <div id="shop-say" hidden></div>
   <button class="reward slim" data-action="free"><svg class="ic"><use href="#i-play"/></svg> 広告で 強化を1回タダ <span class="mono" data-free></span></button>
   <button id="start" class="primary" data-action="start">出撃</button>
-  <button class="pp-link" id="pp-open">個人情報方針</button>
+  <div><button class="pp-link" id="xf-open">引き継ぎ</button><button class="pp-link" id="pp-open">個人情報方針</button></div>
 </section>
 
 <section id="pause" class="screen" hidden>
@@ -493,6 +516,7 @@
   <button class="primary" id="res-next" data-action="next">次へ <svg class="ic"><use href="#i-play"/></svg></button>
   <button class="primary" id="res-retry" data-action="start">もう一度 ↻</button>
   <div class="row">
+    <button class="small" id="res-noads" hidden>広告を消す</button>
     <button class="small" id="res-skip" data-action="skip"><svg class="ic"><use href="#i-play"/></svg> 広告で この面をとばす</button>
     <button class="small" data-action="menu">タイトル</button>
   </div>
@@ -516,7 +540,7 @@
   <div class="odds" id="odds2">宝珠のくじ: 点線の枠の9種だけが 同じ確率で出る　／　かぶったら宝珠2が戻る</div>
   <button class="reward slim" id="gem-ad" data-action="gemad"><svg class="ic"><use href="#i-play"/></svg> 広告で <span class="gem"></span>+1 <span class="mono" id="gem-left"></span></button>
   <div id="gem-shop" class="packs" hidden></div>
-  <div class="odds" id="odds4" hidden>買った宝珠はこの端末の中に保存されます。アプリを消したり機種を変えたりすると戻りません</div>
+  <div class="odds" id="odds4" hidden>買った宝珠はこの端末の中に保存されます。機種を変えるときは タイトルの「引き継ぎ」でコードを出して 新しい端末で入れてください</div>
   <div class="odds" id="odds3" hidden>縁起物は 何戦かに一度 結果の画面に出る宝箱から出る。1つにつき銭 +2%</div>
 </section>
 
@@ -540,6 +564,7 @@
   <div class="rank-title mincho">宝珠</div>
   <div class="wallet mono" id="gs-wallet"></div>
   <div class="gs-say">宝珠のくじでしか出ないスキンが9種。負けたときの復活にも使える</div>
+  <div id="gs-special"></div>
   <div id="gs-packs" class="packs"></div>
   <div class="odds" id="gs-note"></div>
   <button class="reward" data-action="gemad"><svg class="ic"><use href="#i-play"/></svg> 広告で <span class="gem"></span>+1 <span class="mono" id="gs-left"></span></button>
@@ -570,6 +595,34 @@
     <div id="quest-list"></div>
     <div class="qall" id="quest-all"></div>
     <button class="small" id="quest-close">とじる</button>
+  </div>
+</section>
+
+<!-- 転生 -->
+<section id="rbp" class="screen pop" hidden>
+  <div class="pop-card">
+    <div class="pop-title mincho">転生</div>
+    <div id="rb-body"></div>
+    <button class="primary" id="rb-go"></button>
+    <button class="small" id="rb-close">やめる</button>
+  </div>
+</section>
+
+<!-- 引き継ぎ（機種変更）。保存を番付のサーバーに預けて 12文字のコードで受け取る -->
+<section id="xfer" class="screen pop" hidden>
+  <div class="pop-card">
+    <div class="pop-title mincho">引き継ぎ</div>
+    <div class="xf-sec"><b>この端末から渡す</b>
+      <div id="xf-code" class="mono" hidden></div>
+      <button class="primary" id="xf-put">引き継ぎコードを出す</button>
+      <div class="odds">新しい端末でこのコードを入れると 今の記録が移ります。30日のうちに一度だけ使えます。出し直すと前のコードは使えなくなります</div>
+    </div>
+    <div class="xf-sec"><b>別の端末から受け取る</b>
+      <div class="rank-nm"><input id="xf-in" maxlength="16" placeholder="12文字のコード" autocomplete="off" autocapitalize="characters" enterkeyhint="done"></div>
+      <button class="primary" id="xf-get">受け取る</button>
+      <div class="odds" id="xf-msg">受け取ると この端末の記録は消えて 置き換わります</div>
+    </div>
+    <button class="small" id="xf-close">とじる</button>
   </div>
 </section>
 
@@ -633,7 +686,9 @@ const save = {
   crew: {}, team: [], own: { spear: [0], crew: [0] }, name: "", uid: "",
   last: 0, day: "", streak: 0, gift2: "", free: { day: "", n: 0 },
   gem: 0, plays: 0, bonus: 0, charms: [], gemad: { day: "", n: 0 },   // 宝珠 遊んだ回数 ごほうびの進み 縁起物 宝珠の広告の回数
-  quest: null, bought: false   // 毎日のお題 宝珠を一度でも買ったか（初回だけ2倍）
+  quest: null, bought: false,   // 毎日のお題 宝珠を一度でも買ったか（初回だけ2倍）
+  homare: 0, rebirths: 0,   // 転生でもらう誉（ずっと効く）と 転生した回数
+  noAds: false, passUntil: 0   // 広告なしパックを買ったか 30日の通い札が切れる時刻
 };
 for (const u of UPS) save.up[u.id] = 0;
 try {
@@ -645,7 +700,7 @@ try {
   if (s.fails && typeof s.fails === "object") save.fails = s.fails;
   if (s.stars && typeof s.stars === "object") save.stars = s.stars;
   if (s.opt && typeof s.opt === "object") { save.opt.sound = s.opt.sound !== false; save.opt.vibe = s.opt.vibe !== false; }
-  for (const k of ["tut", "road", "skin", "last", "streak", "gem", "plays", "bonus"]) if (Number.isFinite(s[k])) save[k] = Math.max(0, Math.floor(s[k]));
+  for (const k of ["tut", "road", "skin", "last", "streak", "gem", "plays", "bonus", "homare", "rebirths"]) if (Number.isFinite(s[k])) save[k] = Math.max(0, Math.floor(s[k]));
   for (const k of ["day", "gift2"]) if (typeof s[k] === "string") save[k] = s[k];
   if (typeof s.free?.day === "string" && Number.isFinite(s.free.n)) save.free = { day: s.free.day, n: s.free.n };
   // 仲間と見た目。古い保存（「援」の強化、道でもらった竹槍の色）は引き継ぐ
@@ -664,6 +719,8 @@ try {
   if (!save.own.crew.includes(save.cskin)) save.cskin = 0;
   save.dev = s.dev === true;
   save.bought = s.bought === true;
+  save.noAds = s.noAds === true;
+  if (Number.isFinite(s.passUntil)) save.passUntil = s.passUntil;
   save.bombTut = s.bombTut === true;
   const q = s.quest;
   if (q && typeof q.day === "string" && Array.isArray(q.ids) && q.ids.length === 3 && q.ids.every((k) => typeof k === "string"))
@@ -677,7 +734,10 @@ const DEV_PRESETS = {
 // 開発者用: 一度 ?dev を付けて開くと その端末ではスキンと縁起物を全部持っている扱いになる（?dev=0 で解除）
 {
   const q = new URLSearchParams(location.search);
+  // 公開しているページでは効かない（誰でもアドレスに付けられるため）。手元の localhost と 試験版アプリ（?dev を付けて開く）だけ
+  const devOk = ["localhost", "127.0.0.1"].includes(location.hostname) || (location.hostname === "appassets.androidplatform.net" && q.has("dev"));
   if (q.has("dev")) save.dev = q.get("dev") !== "0";
+  if (!devOk) save.dev = false;
   if (save.dev) { const all = (n) => [...Array(n).keys()]; save.own = { spear: all(30), crew: all(24) }; save.charms = all(24); }
   // 開発者用: ?dev&up=20 で 強化を全部その段まで上げる（下げはしない）
   const upTo = Math.floor(Number(q.get("up")));
@@ -694,7 +754,8 @@ const DEV_PRESETS = {
   });
   if (save.dev && (q.has("stage") || q.has("up") || q.has("as") || q.has("preset"))) { q.delete("stage"); q.delete("up"); q.delete("as"); q.delete("preset"); history.replaceState(null, "", location.pathname + (q.size ? "?" + q : "")); }
 }
-const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch {} };
+let replacing = false;   // 引き継ぎで保存を置き換えて読み直す間は 古い記録で上書きしない（画面を離れるときにも保存するため）
+const persist = () => { if (replacing) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch {} };
 // 番付（ネットのランキング）。預けるのは名前・越えた面の数・端末ごとの乱数IDだけ。つながらなくても遊べる
 const RANK_URL = "https://takeyari-rank.bamboospear.workers.dev";   // 番付サーバーの場所。空なら番付の入口を出さない
 const rankOn = () => !!RANK_URL && (!DEBUG || location.search.includes("rank"));   // 検証ボットの成績は送らない
@@ -703,6 +764,11 @@ const rankPost = (path, body) => fetch(RANK_URL + path, { method: "POST", header
 function rankSend() {
   if (!rankOn() || save.dev || !save.name || save.best < 2) return Promise.resolve();   // 開発者は面を飛ばせるので番付に載せない
   return rankPost("/score", { id: save.uid, name: save.name, stage: save.best - 1 }).catch(() => {});
+}
+// 1面遊び終えるたびに 面と勝ち負けを送る（どこでやめたかを数えるため。名前は送らない。番付と同じく検証と開発者は送らない）
+function playSend(stage, win) {
+  if (!rankOn() || save.dev) return;
+  rankPost("/play", { id: save.uid, stage, win, rebirths: save.rebirths }).catch(() => {});
 }
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
 async function rankLoad() {
@@ -722,7 +788,7 @@ async function rankLoad() {
 const L = (id) => save.up[id];
 
 // 強化の効き目（1段ごとの差は小さく、段数を多く）
-const dmgMul = () => 1 + 0.1 * L("spear");
+const dmgMul = () => (1 + 0.1 * L("spear")) * (1 + 0.05 * save.homare);   // 誉1つにつき威力 +5%
 const extraPierce = () => Math.min(3, Math.floor(L("spear") / 4));
 const ammoCap = () => 5 + Math.min(8, Math.floor(L("bundle") / 2));
 const reloadTime = () => 0.8 * Math.pow(0.96, L("bundle"));
@@ -730,7 +796,7 @@ const chargeK = () => Math.pow(0.97, L("breath"));
 const perfectWin = () => { const k = chargeK(); const a = 0.5 * k; return [a, a + 0.3 * k + 0.018 * L("breath")]; };
 const chargeFull = () => 0.75 * chargeK();
 const cityMax = () => 100 + L("city") * 12;
-const coinMul = () => (1 + 0.1 * L("coin")) * (1 + 0.02 * save.charms.length);   // 縁起物は1つにつき銭 +2%
+const coinMul = () => (1 + 0.1 * L("coin")) * (1 + 0.02 * save.charms.length) * (1 + 0.1 * save.homare);   // 縁起物は1つにつき +2%　誉は1つにつき +10%
 const assistR = () => 85 + 5 * L("breath");
 const upCost = (u) => Math.round(u.base * Math.pow(1.32, L(u.id)));
 
@@ -3610,6 +3676,7 @@ function endStage(win) {
     let gain, road = [];
     st.cel = [];
     save.plays++;
+    playSend(def.n, win);
     if (win) {
       gain = Math.round((st.gain + 3 + def.n) * (1 + 0.25 * (stars - 1)));
       if (def.g.has("boss")) gain *= 2;   // 指揮機の面は銭が倍（道のりに大きな節で出している）
@@ -3657,6 +3724,7 @@ function endStage(win) {
     $("res-near").hidden = win;
     if (!win) $("res-near").innerHTML = nearMiss();
     $("res-chest").hidden = save.plays % CHEST_EVERY !== 0;
+    $("res-noads").hidden = !shop || !prices.no_ads || save.noAds;
     setMode("result");
     autoT = win ? AUTO_NEXT : -1;
     if (st.cel.length) fanfare(st.cel);
@@ -3809,7 +3877,21 @@ const PACKS = [{ id: "gem_10", n: 10 }, { id: "gem_30", n: 30, tag: "人気" }, 
 const shop = window.TakeyariShop || null;
 let prices = {};
 window.__onPrices = (p) => { prices = p && typeof p === "object" ? p : {}; refreshShops(); };
+const PASS_NOW = 5, PASS_DAY = 2, PASS_DAYS = 30;   // 通い札: 買ってすぐ宝珠5 そのあと30日 毎日宝珠2（計65）
+const passLeft = () => Math.max(0, Math.ceil((save.passUntil - Date.now()) / 864e5));
 window.__onPurchase = (id) => {
+  if (id === "no_ads") {   // 買い切り。起動のたびに Play から届くので 二度目からは黙って印を付けるだけ
+    if (save.noAds) return;
+    save.noAds = true; persist(); refreshShops();
+    fanfare([{ k: "お買い上げ", t: "広告なし", s: "面の合間の広告はもう出ない<br>ごほうびの動画は自分で選んで見られる" }]);
+    return;
+  }
+  if (id === "pass_30") {
+    save.passUntil = Math.max(Date.now(), save.passUntil) + PASS_DAYS * 864e5;
+    save.gem += PASS_NOW; persist(); refreshShops();
+    fanfare([{ k: "お買い上げ", t: "30日の通い札", s: `${GEM}+${PASS_NOW}<br>明日から毎日 ${GEM}${PASS_DAY} が配給に届く（残り${passLeft()}日）` }]);
+    return;
+  }
   const k = PACKS.find((x) => x.id === id);
   if (!k) return;
   const n = save.bought ? k.n : k.n * 2;   // 初めての購入だけ2倍
@@ -3821,12 +3903,23 @@ window.__onPurchase = (id) => {
 };
 if (shop) setTimeout(() => shop.ready(), 0);   // ページの用意ができてから Play につなぐ
 const packHtml = () => PACKS.filter((k) => prices[k.id]).map((k) => `<button data-buy="${k.id}">${!save.bought ? '<u class="first">初回2倍</u>' : k.tag ? `<u>${k.tag}</u>` : ""}${GEM}${save.bought ? k.n : `<s>${k.n}</s> ${k.n * 2}`}<span class="cs mono">${String(prices[k.id]).replace(/[<>&]/g, "")}</span></button>`).join("");
+// 広告なしパックと 30日の通い札。値段が Play から届いたものだけ並べる
+function specialHtml() {
+  const price = (id) => String(prices[id] || "").replace(/[<>&]/g, "");
+  let h = "";
+  if (prices.no_ads) h += save.noAds
+    ? `<button class="sp own" disabled><b>広告なし</b><small>面の合間の広告は出ません</small><span class="cs">購入済み</span></button>`
+    : `<button class="sp" data-buy="no_ads"><b>広告なしパック</b><small>面の合間の広告が二度と出ない（買い切り）<br>ごほうびの動画は自分で選んで見られる</small><span class="cs mono">${price("no_ads")}</span></button>`;
+  if (prices.pass_30) h += `<button class="sp ${passLeft() ? "own" : ""}" data-buy="pass_30"><b>30日の通い札</b><small>買ってすぐ ${GEM}${PASS_NOW}　そのあと30日 毎日 ${GEM}${PASS_DAY}（計${PASS_NOW + PASS_DAY * PASS_DAYS}）${passLeft() ? `<br>残り${passLeft()}日。買い足すと30日のびる` : ""}</small><span class="cs mono">${price("pass_30")}</span></button>`;
+  return h;
+}
 function renderGems() {
+  $("gs-special").innerHTML = shop ? specialHtml() : "";
   const any = shop && PACKS.some((k) => prices[k.id]);
   $("gs-wallet").innerHTML = `${GEM}${save.gem}`;
   $("gs-packs").innerHTML = packHtml();
   $("gs-packs").hidden = !any;
-  $("gs-note").textContent = any ? "買った宝珠はこの端末の中に保存されます。アプリを消したり機種を変えたりすると戻りません" : "宝珠を買えるのは Android 版だけです。広告とごほうびと宝箱でも手に入ります";
+  $("gs-note").textContent = any ? "買った宝珠はこの端末の中に保存されます。機種を変えるときは タイトルの「引き継ぎ」でコードを出して 新しい端末で入れてください" : "宝珠を買えるのは Android 版だけです。広告とごほうびと宝箱でも手に入ります";
   $("gs-left").textContent = `あと${gemLeft()}回`;
   $("gemshop").querySelector('[data-action="gemad"]').disabled = gemLeft() <= 0;
 }
@@ -3858,6 +3951,22 @@ function pgacha() {
 }
 
 // ---------------- 強化（結果画面とタイトルで） ----------------
+// 強化の札に 今の効き目と 次の段での効き目を出す（押す前に何が変わるか分かるように）
+const UPFX = {
+  spear: () => `威力×${dmgMul().toFixed(1)}${extraPierce() ? ` 貫通+${extraPierce()}` : ""}`,
+  bundle: () => `${ammoCap()}本 装填${reloadTime().toFixed(2)}秒`,
+  breath: () => `溜め${chargeFull().toFixed(2)}秒`,
+  city: () => `耐久${cityMax()}`,
+  coin: () => `銭×${(1 + 0.1 * L("coin")).toFixed(1)}`
+};
+function upFx(u, max) {
+  const now = UPFX[u.id]();
+  if (max) return [now, ""];
+  save.up[u.id]++;
+  const next = UPFX[u.id]();
+  save.up[u.id]--;
+  return [now, next];
+}
 const today = () => new Date().toLocaleDateString("sv");   // 端末の日付で YYYY-MM-DD
 let freeUp = false;   // 広告を見たあと、次の強化が1回タダ
 const freeLeft = () => 3 - (save.free.day === today() ? save.free.n : 0);
@@ -3879,7 +3988,8 @@ function refreshShops() {
       b.dataset.up = u.id;
       b.disabled = max || (!freeUp && save.coins < cost);
       b.className = !b.disabled ? "can" : "";
-      b.innerHTML = `<span class="lv mono">${max ? "MAX" : `Lv${l}`}</span><span class="ic">${u.ic}</span>`
+      const [fx, nx] = upFx(u, max);
+      b.innerHTML = `<span class="lv mono">${max ? "MAX" : `Lv${l}`}</span><span class="ic">${u.ic}</span><span class="fx">${fx}</span>${nx ? `<span class="nx">次 ${nx}</span>` : ""}`
         + `<span class="cs mono">${max ? "―" : freeUp ? "タダ" : `${COIN}${cost}`}</span>`;
       shop.appendChild(b);
     }
@@ -3889,14 +3999,14 @@ function refreshShops() {
     const lv = crewLv(c.id), head = `<span class="cic">${c.ic}</span>`;
     if (save.best <= c.at) return `<div class="crow lock">${head}<div class="cnm"><b>${c.nm}</b><small>第${c.at}面で解放</small></div></div>`;
     if (!lv) return `<div class="crow">${head}<div class="cnm"><b>${c.nm}</b><small>${c.say}</small></div><button data-hire="${c.id}" class="${save.coins >= c.cost ? "can" : ""}" ${save.coins >= c.cost ? "" : "disabled"}>雇う ${COIN}${c.cost}</button></div>`;
-    const on = save.team.includes(c.id), uc = crewUpCost(c), tier = TIERS[c.id]?.[crewTier(lv)] || c.say;
+    const on = save.team.includes(c.id), uc = crewUpCost(c), t = crewTier(lv), tier = TIERS[c.id] ? TIERS[c.id][t] + (t < 4 ? `　Lv${TIER_AT[t + 1]}で${TIERS[c.id][t + 1]}` : "") : c.say;   // 次の段階がいつ来るかも見せる
     return `<div class="crow ${on ? "on" : ""}">${head}<div class="cnm"><b>${c.nm}<i>Lv${lv}</i></b><small>${tier}</small></div>`
       + `<button data-team="${c.id}">${on ? "出撃" : "待機"}</button>`
       + `<button data-crewup="${c.id}" class="${save.coins >= uc ? "can" : ""}" ${save.coins >= uc ? "" : "disabled"}>育 ${COIN}${uc}</button></div>`;
   }).join("");
   renderLook();
   const nTeam = save.team.filter((id) => crewLv(id) > 0).length;
-  const tile = { up: `計 Lv${UPS.reduce((n, u) => n + L(u.id), 0)}`, crew: nTeam ? `${nTeam}人 出撃` : "まだいない", look: (SKINS[save.skin] || SKINS[0]).nm };
+  const tile = { up: `計 Lv${UPS.reduce((n, u) => n + L(u.id), 0)}${save.homare ? `　誉${save.homare}` : ""}`, crew: nTeam ? `${nTeam}人 出撃` : "まだいない", look: (SKINS[save.skin] || SKINS[0]).nm };
   for (const el of document.querySelectorAll("[data-tile]")) el.textContent = tile[el.dataset.tile];
   const curTab = mode === "upgrade" && sub === "look" ? "look" : tab;
   for (const b of document.querySelectorAll("[data-tab]")) b.classList.toggle("on", b.dataset.tab === curTab);
@@ -3919,6 +4029,8 @@ function refreshShops() {
   };
   for (const b of document.querySelectorAll("[data-tab]")) b.classList.toggle("badge", dots[b.dataset.tab]);
   $("quest-open").classList.toggle("badge", questReady());
+  $("rb-open").hidden = save.best <= REBIRTH_AT;
+  $("rb-open").classList.toggle("badge", save.best > REBIRTH_AT);
   $("promo").innerHTML = shop && !save.bought ? `${GEM}初めての購入は宝珠2倍（一度だけ） ▶` : `${GEM}宝珠のくじ　ここでしか出ないスキンが9種 ▶`;
 }
 function buyUpgrade(id, btn) {
@@ -4196,6 +4308,7 @@ function roadNodes() {
     const hit = all.find((x) => x.at === n);
     if (hit) { hit.boss = true; hit.lb += "と銭×2"; } else all.push({ at: n, ic: "", nm: "銭×2", lb: "指揮機の面 銭×2", boss: true });
   }
+  if (s <= REBIRTH_AT + 1) all.push({ at: REBIRTH_AT, ic: "転", nm: "転生", lb: "転生できる" });
   return all.sort((a, b) => a.at - b.at);
 }
 const nodeIc = (n) => (n.boss && !n.ic ? '<svg><use href="#i-crown"/></svg>' : n.ic);
@@ -4225,6 +4338,65 @@ function calHtml(fresh) {
     const n = i + 1, got = n < save.streak || (!fresh && n === save.streak), now = n === save.streak;
     return `<div class="${got ? "got" : ""} ${now ? "today" : ""} ${d.g ? "big" : ""}">${n}日目<b>${d.g ? `${GEM}${d.g}　` : ""}${COIN}${d.c}</b></div>`;
   }).join("");
+}
+
+// ---------------- 引き継ぎ（機種変更） ----------------
+// 渡す: 保存を丸ごと番付のサーバーに預けて 12文字のコードをもらう。受け取る: コードで保存を受け取り この端末の保存を置き換えて読み直す
+let xfSure = false;
+const xfMsg = (t) => { $("xf-msg").textContent = t; };
+async function xferPut() {
+  persist();
+  $("xf-put").disabled = true;
+  try {
+    const d = await rankPost("/transfer/put", { id: save.uid, save: { ...save, dev: false } });
+    if (!d.code) throw new Error(d.error);
+    $("xf-code").textContent = d.code.match(/.{4}/g).join("-");
+    $("xf-code").hidden = false;
+    $("xf-put").textContent = "コードを出し直す";
+  } catch { $("xf-code").textContent = "つながりません。あとでもう一度"; $("xf-code").hidden = false; }
+  $("xf-put").disabled = false;
+}
+async function xferGet() {
+  const code = $("xf-in").value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (code.length !== 12) { xfMsg("コードは12文字です（ハイフンはなくてもよい）"); return; }
+  if (!xfSure) { xfSure = true; $("xf-get").classList.add("sure"); $("xf-get").textContent = "この端末の記録を置き換える"; xfMsg("もう一度押すと この端末の記録は消えて 置き換わります"); return; }
+  $("xf-get").disabled = true;
+  try {
+    const d = await rankPost("/transfer/get", { code });
+    if (!d.save) throw new Error(d.error || "見つかりません");
+    replacing = true;
+    localStorage.setItem(SAVE_KEY, JSON.stringify(d.save));
+    location.reload();
+  } catch (e) { xfMsg(e.message === "Failed to fetch" ? "つながりません。あとでもう一度" : "コードが見つかりません。使い済みか 30日を過ぎたか 打ち間違いです"); $("xf-get").disabled = false; }
+}
+
+// ---------------- 転生 ----------------
+// 第100面を越えたら 最初の面からやり直す代わりに「誉」をもらう。誉はずっと効く（1つにつき 銭 +10% 竹槍の威力 +5%）
+// 余った銭も強化も最初に戻るので 次の周回を速く進めるための倍率として意味を持たせる
+const REBIRTH_AT = 100;
+const homareGain = () => Math.floor((save.best - 1) / 20);   // 100面で5 250面で12
+const homareText = (h) => `銭 +${h * 10}%　威力 +${h * 5}%`;
+let rbSure = false;
+function renderRebirth() {
+  const g = homareGain(), ok = save.best > REBIRTH_AT, after = save.homare + g;
+  $("rb-body").innerHTML = `<div class="rb-now">第${save.best - 1}面まで越えた　いまの誉 ${save.homare}<br>（${homareText(save.homare)}）</div>`
+    + `<div class="rb-gain">転生すると 誉 <b>+${g}</b>　と ${GEM}5<br>誉 ${after}（${homareText(after)}）</div>`
+    + `<div class="rb-list"><div><b>最初に戻るもの</b>面　強化　仲間　銭</div><div><b>残るもの</b>スキン　縁起物　宝珠　番付の記録</div></div>`;
+  $("rb-go").disabled = !ok;
+  $("rb-go").classList.toggle("sure", rbSure);
+  $("rb-go").textContent = !ok ? `第${REBIRTH_AT}面を越えると転生できる` : rbSure ? "本当に転生する" : "転生する";
+}
+function rebirth() {
+  if (save.best <= REBIRTH_AT) return;
+  const g = homareGain();
+  save.homare += g; save.rebirths++; save.gem += 5;
+  for (const u of UPS) save.up[u.id] = 0;
+  save.crew = {}; save.team = []; save.coins = 0;
+  save.stage = save.best = 1; save.road = 0; save.stars = {}; save.fails = {};
+  persist();
+  rebuildAllies(); refreshShops();
+  $("rbp").hidden = true;
+  fanfare([{ k: "転生", t: `誉 +${g}`, s: `${homareText(save.homare)}<br>${GEM}+5　第1面からやり直す` }]);
 }
 
 // ---------------- 毎日のお題。日付が変わると3つ選び直す ----------------
@@ -4282,6 +4454,7 @@ function checkGift() {
     lines.push([`毎日の配給　${save.streak}日目`, d.c]);
     gem = d.g || 0;
     daily = true;
+    if (save.passUntil > now) { gem += PASS_DAY; lines.push([`30日の通い札　残り${passLeft()}日`, 0, `${GEM}${PASS_DAY}`]); }
   }
   const away = save.last ? (now - save.last) / 60000 : 0;
   if (away >= 10 && save.best > 1) lines.push(["見張りの報酬", Math.round(Math.min(480, away) * (0.15 + save.best * 0.03))]);
@@ -4290,7 +4463,7 @@ function checkGift() {
   if (!lines.length) return;
   gift = { sum: lines.reduce((a, l) => a + l[1], 0), gem };
   $("gift-cal").innerHTML = daily ? calHtml(true) : "";
-  $("gift-lines").innerHTML = lines.map(([t, n]) => `<div><span>${t}</span><span class="mono">${COIN}${n}</span></div>`).join("");
+  $("gift-lines").innerHTML = lines.map(([t, n, h]) => `<div><span>${t}</span><span class="mono">${h || COIN + n}</span></div>`).join("");
   $("gift-sum").innerHTML = `${COIN}+${gift.sum}${gem ? `　${GEM}+${gem}` : ""}`;
   $("gift-double").hidden = save.gift2 === day;
   $("gift").hidden = false;
@@ -4315,6 +4488,7 @@ const ads = {
     if (this.native()) this.native().showRewarded(); else window.__onReward();
   },
   interstitial(stage, every = false) {   // every: 間をあけずに毎回出す（自動で次の面へ進むとき）
+    if (save.noAds) return;
     if (this.native() && (every || (stage >= 4 && Date.now() - lastInterstitial > 180000))) {
       lastInterstitial = Date.now();
       this.native().showInterstitial();
@@ -4341,10 +4515,17 @@ document.addEventListener("click", (e) => {
   if (b.dataset.buy) { if (shop) shop.buy(b.dataset.buy); audio.ui(); return; }
   if (b.id === "pp-open") { $("pp-frame").src = "privacy.html"; $("pp").hidden = false; audio.ui(); return; }
   if (b.id === "pp-close") { $("pp").hidden = true; audio.ui(); return; }
-  if (b.id === "gem-open") { openGems(); audio.ui(); return; }
+  if (b.id === "gem-open" || b.id === "res-noads") { autoT = -1; openGems(); audio.ui(); return; }
   if (b.id === "quest-open") { renderQuest(); $("quest").hidden = false; audio.ui(); return; }
   if (b.id === "quest-close") { $("quest").hidden = true; audio.ui(); return; }
   if (b.dataset.quest) { takeQuest(b.dataset.quest); return; }
+  if (b.id === "xf-open") { xfSure = false; $("xf-get").classList.remove("sure"); $("xf-get").textContent = "受け取る"; $("xf-code").hidden = true; $("xf-put").textContent = "引き継ぎコードを出す"; xfMsg("受け取ると この端末の記録は消えて 置き換わります"); $("xfer").hidden = false; audio.ui(); return; }
+  if (b.id === "xf-close") { $("xfer").hidden = true; audio.ui(); return; }
+  if (b.id === "xf-put") { xferPut(); audio.ui(); return; }
+  if (b.id === "xf-get") { xferGet(); audio.ui(); return; }
+  if (b.id === "rb-open") { rbSure = false; renderRebirth(); $("rbp").hidden = false; audio.ui(); return; }
+  if (b.id === "rb-close") { $("rbp").hidden = true; audio.ui(); return; }
+  if (b.id === "rb-go") { if (!rbSure) { rbSure = true; renderRebirth(); audio.ui(); } else { rebirth(); audio.clear(); } return; }
   if (b.id === "cal-open") { $("cal-grid").innerHTML = calHtml(false); $("calp").hidden = false; audio.ui(); return; }
   if (b.id === "cal-close") { $("calp").hidden = true; audio.ui(); return; }
   if (b.id === "promo" && shop && !save.bought) { openGems(); audio.ui(); return; }
