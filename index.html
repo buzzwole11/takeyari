@@ -14,8 +14,8 @@
   :root {
     --paper: #f1ead6;
     --muted: #9fb0b3;
-    --gold: #f2c46d;
-    --cyan: #8fe0d6;
+    --gold: #ffd23f;
+    --cyan: #8ff3ff;
     --red: #f07c68;
     --ink: #060c14;
     --line: rgba(230, 236, 230, 0.18);
@@ -122,14 +122,31 @@
   /* 低い画面でも上が切れないように 上から積んで余りを題字の上に回す */
   #menu { justify-content: flex-start; padding-top: max(80px, env(safe-area-inset-top)); }
   #menu > * { flex-shrink: 0; }
-  #menu > h1 { margin-top: auto; }
-  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); width: min(340px, 100%); flex: none; border-bottom: 2px solid var(--line); }
-  .tile { padding: 10px 2px 8px; border: 1px solid transparent; border-bottom: 0; border-radius: 12px 12px 0 0; background: rgba(10, 22, 30, 0.55); color: var(--muted); line-height: 1.2; margin-bottom: -2px; }
-  .tile b { display: block; font-size: 19px; letter-spacing: 0.14em; }
-  .tile small { display: block; font-size: 11px; margin-top: 3px; }
-  .tile.on { background: rgba(242, 196, 109, 0.16); border-color: var(--gold); border-bottom: 2px solid var(--gold); color: var(--paper); }
-  .tile.on b { color: var(--gold); }
-  #look .wallet { align-self: center; margin: 0 0 6px; }
+  /* 市販のスマホゲームの形: 上に財布 下にタブ。出撃のタブだけ題字と道のりと丸ボタンを出す */
+  #menu { padding-top: calc(max(12px, env(safe-area-inset-top)) + 58px); padding-bottom: calc(max(8px, env(safe-area-inset-bottom)) + 76px); }
+  #look { padding-bottom: calc(max(8px, env(safe-area-inset-bottom)) + 76px); }
+  body:not([data-tab="home"]) #menu .home { display: none; }
+  #menu h1 { margin-top: 18px; }
+  #start { margin-top: auto; }
+  .topbar { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; }
+  .topbar .wallet { margin: 0; display: flex; gap: 8px; font-size: 18px; }
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px 4px 6px; border-radius: 999px; background: rgba(4, 9, 16, 0.75); border: 1px solid rgba(242, 196, 109, 0.45); box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5); }
+  .topbar .gemplus { margin: 0; font-size: 18px; }
+  .gear { margin-left: auto; padding: 0; font-size: 24px; line-height: 1; }
+  .mid { flex: 1 0 auto; width: 100%; display: flex; justify-content: space-between; align-items: flex-start; padding: 6px 0; }
+  .mid .side { position: static; flex-direction: column; gap: 24px; }
+  .setl { display: flex; flex-direction: column; gap: 4px; margin: 12px auto 4px; width: min(240px, 100%); }
+  .setl .small, #setp .pop-card > .small { margin-top: 4px; font-size: 15px; padding: 10px 14px; color: var(--paper); }
+  #setp .opts { justify-content: center; }
+  #bnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; padding: 6px 4px max(6px, env(safe-area-inset-bottom)); background: linear-gradient(#1a2630, #0a1219); border-top: 2px solid rgba(242, 196, 109, 0.55); box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.6); }
+  .nb { margin: 0; padding: 2px 0; border: 0; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .nb b { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; font: 700 23px "Yu Mincho", serif; color: var(--paper); background: linear-gradient(#2c3c48, #15212a); border: 1px solid rgba(255, 255, 255, 0.12); transition: transform 0.15s; }
+  .nb span { font-size: 11px; font-weight: 800; letter-spacing: 0.05em; }
+  .nb.on b { background: linear-gradient(#ffe2a0, var(--gold)); color: #1b1407; border-color: #fff3d0; transform: translateY(-10px) scale(1.15); box-shadow: 0 6px 16px rgba(242, 196, 109, 0.5); }
+  .nb.on span { color: var(--gold); transform: translateY(-4px); }
+  .nb.badge::after { top: -4px; right: calc(50% - 30px); }
+  #look .wallet { align-self: flex-start; margin: 0 0 10px; display: flex; gap: 8px; font-size: 18px; }
+  #look .gemplus { margin: 0; font-size: 18px; }
   .primary { width: min(330px, 100%); padding: 15px 20px; font-size: 20px; font-weight: 800; letter-spacing: 0.1em; border: 0; border-radius: 8px; background: var(--gold); color: #1b1407; box-shadow: 0 8px 30px rgba(242, 196, 109, 0.3); margin-top: 10px; }
   .reward { width: min(330px, 100%); padding: 11px 18px; font-size: 16px; font-weight: 800; border: 1px solid rgba(143, 224, 214, 0.55); border-radius: 8px; background: rgba(20, 60, 64, 0.85); color: var(--cyan); margin-top: 8px; }
   .small { padding: 8px 14px; font-size: 13px; border: 1px solid var(--line); border-radius: 6px; background: rgba(8, 18, 26, 0.7); margin-top: 8px; color: var(--muted); }
@@ -220,7 +237,7 @@
   .badge::after { content: "!"; position: absolute; top: -5px; right: -5px; width: 19px; height: 19px; border-radius: 50%; background: #e8392b; color: #fff; font: 800 13px/19px sans-serif; text-align: center; box-shadow: 0 0 0 2px rgba(4, 9, 16, 0.8); animation: bdg 1.1s ease-in-out infinite; z-index: 2; }
   @keyframes bdg { 50% { transform: scale(1.18); } }
   /* タイトルの左の丸ボタン（お題 配給表） */
-  .side { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 100px; display: flex; gap: 10px; }
+  .side { display: flex; gap: 10px; }
   .sideb { position: relative; width: 46px; height: 46px; padding: 0; margin: 0; border-radius: 50%; border: 2px solid rgba(242, 196, 109, 0.7); background: radial-gradient(circle at 35% 30%, #3a4a58, #101c26); color: var(--gold); font: 700 22px "Yu Mincho", serif; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6); }
   .sideb small { position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); font: 700 10px sans-serif; color: var(--paper); white-space: nowrap; text-shadow: 0 1px 3px #000; }
   /* お題と配給表の札 */
@@ -380,7 +397,6 @@
   #unlock b { display: block; font-size: min(72px, 17vw); line-height: 1.15; color: var(--paper); text-shadow: 0 0 30px rgba(242, 196, 109, 0.9), 0 6px 30px #000; white-space: nowrap; }
   #unlock .ub > span { display: block; font-size: 16px; color: var(--paper); margin-top: 12px; }
   #unlock em { display: block; font-style: normal; font-size: 12px; color: var(--muted); margin-top: 26px; }
-  .pp-link { margin-top: 8px; padding: 2px 10px; font-size: 11px; color: var(--muted); background: none; border: 0; text-decoration: underline; }
   #pp { background: #f6f3ea; z-index: 45; padding: 0 0 10px; }
   #pp iframe { flex: 1; width: 100%; border: 0; background: #f6f3ea; }
   #gemshop { background: rgba(4, 9, 16, 0.94); justify-content: center; z-index: 25; }
@@ -392,7 +408,6 @@
   .packs button u { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); text-decoration: none; font-size: 11px; font-weight: 800; padding: 1px 8px; border-radius: 999px; background: var(--gold); color: #1b1407; white-space: nowrap; }
   #askname { background: rgba(4, 9, 16, 0.92); justify-content: center; z-index: 20; }
   .odds { font-size: 11px; color: var(--muted); margin-top: 8px; }
-  #rank-open { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 14px; margin: 0; font-size: 17px; padding: 9px 16px; color: var(--gold); border-color: rgba(242, 196, 109, 0.5); letter-spacing: 0.2em; }
   #rank { background: rgba(4, 9, 16, 0.9); justify-content: flex-start; overflow: hidden; }
   .rank-title { font-size: 28px; letter-spacing: 0.4em; color: var(--gold); }
   .rank-nm { display: flex; gap: 6px; width: min(340px, 100%); margin-top: 14px; }
@@ -411,6 +426,72 @@
   .recall.can { color: #1b1407; background: var(--gold); border-color: var(--gold); box-shadow: 0 0 14px rgba(242, 196, 109, 0.7); animation: recallpulse 0.9s ease-in-out infinite; }
   @keyframes recallpulse { 50% { transform: translate(-50%, -100%) scale(1.1); } }
   .recall.can .coin { box-shadow: none; }
+  /* ===== 市販品の色（ここから下は上の決まりを上書きする） ===== */
+  /* 押す場所: 黄色（出撃など） 緑（広告のごほうび） 青（そのほか） */
+  .primary { border: 3px solid #6b3400; border-radius: 16px; background: linear-gradient(#fff07a, #ffc21a 55%, #ff9e0d); color: #fff; text-shadow: 0 2px 0 #7a3a00, 2px 0 0 #7a3a00, -2px 0 0 #7a3a00, 0 -2px 0 #7a3a00, 1.4px 1.4px 0 #7a3a00, -1.4px 1.4px 0 #7a3a00, 1.4px -1.4px 0 #7a3a00, -1.4px -1.4px 0 #7a3a00;
+    box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.75), inset 0 -4px 0 rgba(160, 70, 0, 0.35), 0 6px 0 #8a4400, 0 10px 18px rgba(0, 0, 0, 0.5); }
+  .reward { border: 3px solid #145a1e; border-radius: 14px; background: linear-gradient(#9ef56c, #45c64c 55%, #23993a); color: #fff; text-shadow: 0 2px 0 #145a1e, 2px 0 0 #145a1e, -2px 0 0 #145a1e, 0 -2px 0 #145a1e, 1.4px 1.4px 0 #145a1e, -1.4px 1.4px 0 #145a1e, 1.4px -1.4px 0 #145a1e, -1.4px -1.4px 0 #145a1e;
+    box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.6), 0 5px 0 #136b22, 0 8px 14px rgba(0, 0, 0, 0.45); }
+  .reward .ic, .primary .ic { filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.6)); }
+  .small { border: 2px solid #12357a; border-radius: 12px; background: linear-gradient(#6fcfff, #2f86e8); color: #fff; font-weight: 800; text-shadow: 0 1.5px 0 #12357a, 1.5px 0 0 #12357a, -1.5px 0 0 #12357a, 0 -1.5px 0 #12357a, 1.0499999999999998px 1.0499999999999998px 0 #12357a, -1.0499999999999998px 1.0499999999999998px 0 #12357a, 1.0499999999999998px -1.0499999999999998px 0 #12357a, -1.0499999999999998px -1.0499999999999998px 0 #12357a;
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), 0 4px 0 #1a4aa0, 0 6px 10px rgba(0, 0, 0, 0.4); }
+  .setl .small, #setp .pop-card > .small { color: #fff; }
+  .primary:active, .reward:active, .small:active { transform: translateY(4px); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 1px 0 rgba(0, 0, 0, 0.6); }
+  .primary:disabled, .reward:disabled, .small:disabled { filter: grayscale(0.85) brightness(0.75); opacity: 1; }
+
+  /* 札（強化 仲間 スキン 宝珠の品）: 明るい青の板に太い紺の縁 */
+  .shop button, .looks button, .sp, .packs button { border: 3px solid #0e1f47; border-radius: 14px; background: linear-gradient(#4f86d6, #2c56a6 60%, #22468c); color: #fff;
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 4px 0 #0b1838, 0 6px 12px rgba(0, 0, 0, 0.4); }
+  .shop button .ic, .looks .big { color: #fff; text-shadow: 0 2px 0 #0e1f47, 2px 0 0 #0e1f47, -2px 0 0 #0e1f47, 0 -2px 0 #0e1f47, 1.4px 1.4px 0 #0e1f47, -1.4px 1.4px 0 #0e1f47, 1.4px -1.4px 0 #0e1f47, -1.4px -1.4px 0 #0e1f47; }
+  .shop button .lv { color: #ffe9a8; font-weight: 800; }
+  .shop button .fx { color: #fff; opacity: 1; }
+  .shop button .nx { color: #b8ffd0; font-weight: 700; }
+  .shop button .cs { color: #ffd23f; font-weight: 800; text-shadow: 0 1.5px 0 #3b1d00, 1.5px 0 0 #3b1d00, -1.5px 0 0 #3b1d00, 0 -1.5px 0 #3b1d00, 1.0499999999999998px 1.0499999999999998px 0 #3b1d00, -1.0499999999999998px 1.0499999999999998px 0 #3b1d00, 1.0499999999999998px -1.0499999999999998px 0 #3b1d00, -1.0499999999999998px -1.0499999999999998px 0 #3b1d00; }
+  .shop button.can { border-color: #ffd23f; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4), 0 4px 0 #a26a00, 0 0 16px rgba(255, 210, 63, 0.7); }
+  .shop button:disabled { opacity: 1; filter: grayscale(0.6) brightness(0.7); }
+  .crow { border: 3px solid #0e1f47; border-radius: 14px; background: linear-gradient(#4f86d6, #2c56a6 60%, #22468c); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.3), 0 4px 0 #0b1838; }
+  .crow.on { border-color: #0c3a24; background: linear-gradient(#5fd08e, #2e9a60 60%, #227a4b); }
+  .crow .cic, .crow.on .cic { background: rgba(0, 0, 0, 0.25); color: #fff; }
+  .crow small { color: #e4f0ff; }
+  .shop .crow button { border-width: 2px; border-radius: 10px; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 3px 0 rgba(0, 0, 0, 0.5); font-weight: 800; }
+  .shop .crow [data-crewup], .shop .crow [data-hire] { border-color: #6b3400; background: linear-gradient(#fff07a, #ffb414); color: #fff; text-shadow: 0 1.5px 0 #7a3a00, 1.5px 0 0 #7a3a00, -1.5px 0 0 #7a3a00, 0 -1.5px 0 #7a3a00, 1.0499999999999998px 1.0499999999999998px 0 #7a3a00, -1.0499999999999998px 1.0499999999999998px 0 #7a3a00, 1.0499999999999998px -1.0499999999999998px 0 #7a3a00, -1.0499999999999998px -1.0499999999999998px 0 #7a3a00; }
+  .shop .crow [data-team] { border-color: #12357a; background: linear-gradient(#6fcfff, #2f86e8); color: #fff; text-shadow: 0 1.5px 0 #12357a, 1.5px 0 0 #12357a, -1.5px 0 0 #12357a, 0 -1.5px 0 #12357a, 1.0499999999999998px 1.0499999999999998px 0 #12357a, -1.0499999999999998px 1.0499999999999998px 0 #12357a, 1.0499999999999998px -1.0499999999999998px 0 #12357a, -1.0499999999999998px -1.0499999999999998px 0 #12357a; }
+  .shop .crow.on [data-team] { border-color: #145a1e; background: linear-gradient(#9ef56c, #2fb344); color: #fff; }
+  .sp b { color: #ffd23f; text-shadow: 0 1.5px 0 #3b1d00, 1.5px 0 0 #3b1d00, -1.5px 0 0 #3b1d00, 0 -1.5px 0 #3b1d00, 1.0499999999999998px 1.0499999999999998px 0 #3b1d00, -1.0499999999999998px 1.0499999999999998px 0 #3b1d00, 1.0499999999999998px -1.0499999999999998px 0 #3b1d00, -1.0499999999999998px -1.0499999999999998px 0 #3b1d00; }
+  .sp small { color: #fff; opacity: 1; }
+  .sp.own { border-color: #0e1f47; background: linear-gradient(#3a5c8e, #23395e); }
+
+  /* 小窓 */
+  .pop-card, .gift-card { border: 3px solid #0e1f47; border-radius: 18px; background: linear-gradient(#2f5aa3, #1a3570); box-shadow: 0 0 0 3px #ffd23f, 0 12px 30px rgba(0, 0, 0, 0.6); }
+  .pop-title { color: #fff; font-weight: 800; text-shadow: 0 2px 0 #0e1f47, 2px 0 0 #0e1f47, -2px 0 0 #0e1f47, 0 -2px 0 #0e1f47, 1.4px 1.4px 0 #0e1f47, -1.4px 1.4px 0 #0e1f47, 1.4px -1.4px 0 #0e1f47, -1.4px -1.4px 0 #0e1f47; }
+  .qrow { border: 2px solid #0e1f47; background: rgba(255, 255, 255, 0.12); }
+
+  /* タブ */
+  .tab { border: 2px solid #0e1f47; background: linear-gradient(#3e6fbf, #22468c); color: #fff; }
+  .tab.on { border-color: #6b3400; background: linear-gradient(#fff07a, #ffb414); color: #fff; text-shadow: 0 1.5px 0 #7a3a00, 1.5px 0 0 #7a3a00, -1.5px 0 0 #7a3a00, 0 -1.5px 0 #7a3a00, 1.0499999999999998px 1.0499999999999998px 0 #7a3a00, -1.0499999999999998px 1.0499999999999998px 0 #7a3a00, 1.0499999999999998px -1.0499999999999998px 0 #7a3a00, -1.0499999999999998px -1.0499999999999998px 0 #7a3a00; }
+  #bnav { background: linear-gradient(#2a4a86, #14264d); border-top: 3px solid #ffd23f; }
+  .nb { color: #c9dcff; }
+  .nb b { border: 2px solid #0e1f47; border-radius: 14px; background: linear-gradient(#5b8fe0, #2b55a5); color: #fff; text-shadow: 0 2px 0 #0e1f47, 2px 0 0 #0e1f47, -2px 0 0 #0e1f47, 0 -2px 0 #0e1f47, 1.4px 1.4px 0 #0e1f47, -1.4px 1.4px 0 #0e1f47, 1.4px -1.4px 0 #0e1f47, -1.4px -1.4px 0 #0e1f47; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4), 0 3px 0 #0b1838; }
+  .nb span { text-shadow: 0 1.5px 0 #0b1838, 1.5px 0 0 #0b1838, -1.5px 0 0 #0b1838, 0 -1.5px 0 #0b1838, 1.0499999999999998px 1.0499999999999998px 0 #0b1838, -1.0499999999999998px 1.0499999999999998px 0 #0b1838, 1.0499999999999998px -1.0499999999999998px 0 #0b1838, -1.0499999999999998px -1.0499999999999998px 0 #0b1838; color: #fff; }
+  .nb.on b { border-color: #6b3400; background: linear-gradient(#fff07a, #ffb414); color: #6b3400; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7); box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.75), 0 4px 0 #8a4400, 0 0 18px rgba(255, 210, 63, 0.6); }
+  .nb.on span { color: #ffd23f; }
+
+  /* 左右の丸ボタン */
+  .sideb { border: 3px solid #ffd23f; background: radial-gradient(circle at 35% 30%, #6aa6ff, #2450a8 70%); color: #fff; text-shadow: 0 2px 0 #0e1f47, 2px 0 0 #0e1f47, -2px 0 0 #0e1f47, 0 -2px 0 #0e1f47, 1.4px 1.4px 0 #0e1f47, -1.4px 1.4px 0 #0e1f47, 1.4px -1.4px 0 #0e1f47, -1.4px -1.4px 0 #0e1f47; box-shadow: 0 0 0 2px #0e1f47, 0 4px 10px rgba(0, 0, 0, 0.6); }
+  .sideb small { color: #fff; font-weight: 800; text-shadow: 0 1.5px 0 #0b1838, 1.5px 0 0 #0b1838, -1.5px 0 0 #0b1838, 0 -1.5px 0 #0b1838, 1.0499999999999998px 1.0499999999999998px 0 #0b1838, -1.0499999999999998px 1.0499999999999998px 0 #0b1838, 1.0499999999999998px -1.0499999999999998px 0 #0b1838, -1.0499999999999998px -1.0499999999999998px 0 #0b1838; }
+
+  /* 財布 */
+  .pill { border: 2px solid #0e1f47; background: rgba(8, 18, 44, 0.85); color: #fff; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.15); }
+  .gemplus { color: #fff; border: 2px solid #0e1f47; background: rgba(8, 18, 44, 0.85); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6); animation: none; }
+  .gemplus i { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; border: 2px solid #145a1e; background: linear-gradient(#9ef56c, #2fb344); color: #fff; font-size: 16px; line-height: 1; text-shadow: 0 1px 0 #145a1e, 1px 0 0 #145a1e, -1px 0 0 #145a1e, 0 -1px 0 #145a1e, 0.7px 0.7px 0 #145a1e, -0.7px 0.7px 0 #145a1e, 0.7px -0.7px 0 #145a1e, -0.7px -0.7px 0 #145a1e; }
+  .opt { border: 2px solid #0e1f47; background: linear-gradient(#5b8fe0, #2b55a5); color: #fff; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 3px 0 #0b1838; }
+
+  /* 題字と勝ち負け */
+  #menu h1 { color: #fff; font-weight: 800; text-shadow: 0 3px 0 #2a1200, 3px 0 0 #2a1200, -3px 0 0 #2a1200, 0 -3px 0 #2a1200, 2.0999999999999996px 2.0999999999999996px 0 #2a1200, -2.0999999999999996px 2.0999999999999996px 0 #2a1200, 2.0999999999999996px -2.0999999999999996px 0 #2a1200, -2.0999999999999996px -2.0999999999999996px 0 #2a1200, 0 8px 0 #2a1200, 0 12px 30px rgba(0, 0, 0, 0.8); }
+  #menu h1 span { color: #ffd23f; }
+  #result #res-title { font-weight: 800; }
+  #result.win #res-title { color: #ffd23f; text-shadow: 0 3px 0 #5a2a00, 3px 0 0 #5a2a00, -3px 0 0 #5a2a00, 0 -3px 0 #5a2a00, 2.0999999999999996px 2.0999999999999996px 0 #5a2a00, -2.0999999999999996px 2.0999999999999996px 0 #5a2a00, 2.0999999999999996px -2.0999999999999996px 0 #5a2a00, -2.0999999999999996px -2.0999999999999996px 0 #5a2a00, 0 0 30px rgba(255, 210, 63, 0.8); }
+  #result.lose #res-title { color: #ff5a3c; text-shadow: 0 3px 0 #3a0800, 3px 0 0 #3a0800, -3px 0 0 #3a0800, 0 -3px 0 #3a0800, 2.0999999999999996px 2.0999999999999996px 0 #3a0800, -2.0999999999999996px 2.0999999999999996px 0 #3a0800, 2.0999999999999996px -2.0999999999999996px 0 #3a0800, -2.0999999999999996px -2.0999999999999996px 0 #3a0800; }
 </style>
 </head>
 <body data-mode="menu">
@@ -463,31 +544,28 @@
 <div id="hint" hidden><i></i><svg><use href="#i-hand"/></svg></div>
 
 <section id="menu" class="screen">
-  <div class="opts">
-    <button class="opt" data-opt="sound" aria-label="音"><svg><use href="#i-sound"/></svg></button>
-    <button class="opt" data-opt="vibe" aria-label="振動"><svg><use href="#i-vibe"/></svg></button>
+  <div class="topbar">
+    <div class="wallet mono" id="menu-wallet"></div>
+    <button class="opt gear" id="set-open" aria-label="設定">⚙</button>
   </div>
-  <button class="small mincho" id="rank-open" hidden>番付</button>
-  <div class="side">
-    <button class="sideb" id="quest-open">題<small>お題</small></button>
-    <button class="sideb" id="cal-open">暦<small>配給</small></button>
-    <button class="sideb" id="rb-open" hidden>転<small>転生</small></button>
-  </div>
-  <h1 class="mincho">竹槍<span>防空</span></h1>
-  <div id="road"></div>
-  <div class="wallet mono" id="menu-wallet"></div>
-  <button class="promo" id="promo"><span class="gem"></span>宝珠のくじ　ここでしか出ないスキンが9種 ▶</button>
-  <div class="tiles">
-    <button class="tile" data-tab="up"><b>強化</b><small data-tile="up"></small></button>
-    <button class="tile" data-tab="crew"><b>仲間</b><small data-tile="crew"></small></button>
-    <button class="tile" data-tab="look"><b>スキン</b><small data-tile="look"></small></button>
+  <h1 class="mincho home">竹槍<span>防空</span></h1>
+  <div id="road" class="home"></div>
+  <div class="mid home">
+    <div class="side">
+      <button class="sideb" id="quest-open">題<small>お題</small></button>
+      <button class="sideb" id="cal-open">暦<small>配給</small></button>
+      <button class="sideb" id="rb-open" hidden>転<small>転生</small></button>
+    </div>
+    <div class="side">
+      <button class="sideb" id="rank-open" hidden>番<small>番付</small></button>
+      <button class="sideb" id="promo">籤<small>くじ</small></button>
+    </div>
   </div>
   <div class="shop" data-shop></div>
   <div class="shop" id="crew-shop" hidden></div>
   <div id="shop-say" hidden></div>
   <button class="reward slim" data-action="free"><svg class="ic"><use href="#i-play"/></svg> 広告で 強化を1回タダ <span class="mono" data-free></span></button>
   <button id="start" class="primary" data-action="start">出撃</button>
-  <div><button class="pp-link" id="xf-open">引き継ぎ</button><button class="pp-link" id="pp-open">個人情報方針</button><button class="pp-link" id="tk-open">特商法の表記</button></div>
 </section>
 
 <section id="pause" class="screen" hidden>
@@ -527,11 +605,6 @@
 <!-- 見た目の画面。竹槍と人々それぞれに、持っているものの一覧と、銭で引くくじ -->
 <section id="look" class="screen" hidden>
   <div class="wallet mono" id="look-wallet"></div>
-  <div class="tiles">
-    <button class="tile" data-tab="up"><b>強化</b><small data-tile="up"></small></button>
-    <button class="tile" data-tab="crew"><b>仲間</b><small data-tile="crew"></small></button>
-    <button class="tile" data-tab="look"><b>スキン</b><small data-tile="look"></small></button>
-  </div>
   <div class="tabs center"><button class="tab" data-look="spear">竹槍</button><button class="tab" data-look="crew">人々</button><button class="tab" data-look="charm">縁起物</button><span id="look-count" class="mono"></span></div>
   <canvas id="look-prev"></canvas>
   <div id="look-grid" class="looks"></div>
@@ -542,9 +615,17 @@
   <div class="odds" id="odds2">宝珠のくじ: 点線の枠の9種だけが 同じ確率で出る　／　かぶったら宝珠2が戻る</div>
   <button class="reward slim" id="gem-ad" data-action="gemad"><svg class="ic"><use href="#i-play"/></svg> 広告で <span class="gem"></span>+1 <span class="mono" id="gem-left"></span></button>
   <div id="gem-shop" class="packs" hidden></div>
-  <div class="odds" id="odds4" hidden>買った宝珠はこの端末の中に保存されます。機種を変えるときは タイトルの「引き継ぎ」でコードを出して 新しい端末で入れてください</div>
+  <div class="odds" id="odds4" hidden>買った宝珠はこの端末の中に保存されます。機種を変えるときは 右上の歯車の「引き継ぎ」でコードを出して 新しい端末で入れてください</div>
   <div class="odds" id="odds3" hidden>縁起物は 何戦かに一度 結果の画面に出る宝箱から出る。1つにつき銭 +2%</div>
 </section>
+
+<nav id="bnav">
+  <button class="nb" data-tab="up"><b>強</b><span>強化</span></button>
+  <button class="nb" data-tab="crew"><b>仲</b><span>仲間</span></button>
+  <button class="nb" data-tab="home"><b>戦</b><span>出撃</span></button>
+  <button class="nb" data-tab="look"><b>装</b><span>スキン</span></button>
+  <button class="nb" id="gem-nav"><b>宝</b><span>店</span></button>
+</nav>
 
 <!-- 番付（ネットのランキング） -->
 <!-- 最初の出撃の前に 番付に載せる名前を決める -->
@@ -591,6 +672,21 @@
 
 <!-- 毎日の配給と、留守のあいだの見張りの報酬 -->
 <!-- 毎日のお題 -->
+<section id="setp" class="screen pop" hidden>
+  <div class="pop-card">
+    <div class="pop-title mincho">設定</div>
+    <div class="opts static">
+      <button class="opt" data-opt="sound" aria-label="音"><svg><use href="#i-sound"/></svg></button>
+      <button class="opt" data-opt="vibe" aria-label="振動"><svg><use href="#i-vibe"/></svg></button>
+    </div>
+    <div class="setl">
+      <button class="small" id="xf-open">引き継ぎ（機種変更）</button>
+      <button class="small" id="pp-open">個人情報方針</button>
+      <button class="small" id="tk-open">特商法の表記</button>
+    </div>
+    <button class="small" id="set-close">とじる</button>
+  </div>
+</section>
 <section id="quest" class="screen pop" hidden>
   <div class="pop-card">
     <div class="pop-title mincho">毎日のお題</div>
@@ -2398,6 +2494,7 @@ function setMode(m) {
   $("look").hidden = m !== "upgrade" || sub !== "look";   // 見た目の画面（戻るボタンでタイトルへ）
   $("rank").hidden = m !== "upgrade" || sub !== "rank";   // 番付の画面
   $("rank-open").hidden = !rankOn();
+  $("bnav").hidden = !(m === "menu" || (m === "upgrade" && sub === "look"));
   $("hud").hidden = m === "menu" || m === "result" || m === "upgrade";
   if (m !== "play") { $("hint").hidden = true; for (const p of planes) if (p.bar) p.bar.style.display = "none"; }
   if (m !== "play") { input.charging = false; $("reticle").style.opacity = 0; $("thumb").style.opacity = 0; }
@@ -3932,7 +4029,7 @@ function renderGems() {
   $("gs-wallet").innerHTML = `${GEM}${save.gem}`;
   $("gs-packs").innerHTML = packHtml();
   $("gs-packs").hidden = !any;
-  $("gs-note").textContent = any ? "買った宝珠はこの端末の中に保存されます。機種を変えるときは タイトルの「引き継ぎ」でコードを出して 新しい端末で入れてください" : "宝珠を買えるのは Android 版だけです。広告とごほうびと宝箱でも手に入ります";
+  $("gs-note").textContent = any ? "買った宝珠はこの端末の中に保存されます。機種を変えるときは 右上の歯車の「引き継ぎ」でコードを出して 新しい端末で入れてください" : "宝珠を買えるのは Android 版だけです。広告とごほうびと宝箱でも手に入ります";
   $("gs-left").textContent = `あと${gemLeft()}回`;
   $("gemshop").querySelector('[data-action="gemad"]').disabled = gemLeft() <= 0;
 }
@@ -3984,11 +4081,11 @@ const today = () => new Date().toLocaleDateString("sv");   // 端末の日付で
 let freeUp = false;   // 広告を見たあと、次の強化が1回タダ
 const freeLeft = () => 3 - (save.free.day === today() ? save.free.n : 0);
 let askedName = false;   // 名前を聞くのは1回の起動につき一度だけ
-let tab = "up";       // タイトルの棚: up=強化 / crew=仲間 / look=見た目
+let tab = "home";     // 下のタブ: home=出撃 / up=強化 / crew=仲間（look=見た目 は別の画面）
 let say = "";
 function refreshShops() {
   $("res-wallet").innerHTML = `${COIN}${save.coins}　${GEM}${save.gem}`;
-  $("menu-wallet").innerHTML = `${COIN}${save.coins}<button class="gemplus mono" id="gem-open">${GEM}${save.gem}<i>＋</i></button>`;
+  $("menu-wallet").innerHTML = `<span class="pill">${COIN}${save.coins}</span><button class="pill gemplus mono" id="gem-open">${GEM}${save.gem}<i>＋</i></button>`;
   renderGems();
   $("start").textContent = `出撃　第${save.stage}面`;
   for (const shop of document.querySelectorAll("[data-shop]")) {
@@ -4022,7 +4119,8 @@ function refreshShops() {
   const tile = { up: `計 Lv${UPS.reduce((n, u) => n + L(u.id), 0)}${save.homare ? `　誉${save.homare}` : ""}`, crew: nTeam ? `${nTeam}人 出撃` : "まだいない", look: (SKINS[save.skin] || SKINS[0]).nm };
   for (const el of document.querySelectorAll("[data-tile]")) el.textContent = tile[el.dataset.tile];
   const curTab = mode === "upgrade" && sub === "look" ? "look" : tab;
-  for (const b of document.querySelectorAll("[data-tab]")) b.classList.toggle("on", b.dataset.tab === curTab);
+  for (const b of document.querySelectorAll("#bnav [data-tab]")) b.classList.toggle("on", b.dataset.tab === curTab);
+  document.body.dataset.tab = curTab;
   $("menu").querySelector("[data-shop]").hidden = tab !== "up";
   $("crew-shop").hidden = tab !== "crew";
   $("menu").querySelector('[data-action="free"]').hidden = tab !== "up";
@@ -4040,11 +4138,12 @@ function refreshShops() {
     crew: CREW.some((c) => save.best > c.at && save.coins >= (crewLv(c.id) ? crewUpCost(c) : c.cost)),
     look: save.coins >= GACHA.spear || save.gem >= PGACHA
   };
-  for (const b of document.querySelectorAll("[data-tab]")) b.classList.toggle("badge", dots[b.dataset.tab]);
+  for (const b of document.querySelectorAll("#bnav [data-tab]")) b.classList.toggle("badge", !!dots[b.dataset.tab]);
   $("quest-open").classList.toggle("badge", questReady());
   $("rb-open").hidden = save.best <= REBIRTH_AT;
   $("rb-open").classList.toggle("badge", save.best > REBIRTH_AT);
-  $("promo").innerHTML = shop && !save.bought ? `${GEM}初めての購入は宝珠2倍（一度だけ） ▶` : `${GEM}宝珠のくじ　ここでしか出ないスキンが9種 ▶`;
+  $("promo").innerHTML = shop && !save.bought ? `宝<small>初回2倍</small>` : `籤<small>くじ</small>`;
+  $("promo").classList.toggle("badge", !!shop && !save.bought);
 }
 function buyUpgrade(id, btn) {
   const u = UPS.find((x) => x.id === id);
@@ -4164,7 +4263,7 @@ function gacha(kind) {
 function renderLook() {
   const kind = lookKind, list = kind === "spear" ? SKINS : CSKINS, cur = kind === "spear" ? save.skin : save.cskin;
   const sw = (s) => "#" + new THREE.Color(kind === "spear" ? s.c : s.cloth ?? 0x7a5a6e).getHexString();
-  $("look-wallet").innerHTML = `${COIN}${save.coins}　${GEM}${save.gem}`;
+  $("look-wallet").innerHTML = `<span class="pill">${COIN}${save.coins}</span><span class="pill gemplus">${GEM}${save.gem}</span>`;
   const charm = kind === "charm";
   for (const id of ["gacha-btn", "odds1", "pgacha-btn", "odds2", "gem-ad"]) $(id).hidden = charm;
   if (charm && !save.charms.includes(charmSel)) charmSel = save.charms[0] ?? null;
@@ -4516,6 +4615,9 @@ document.addEventListener("click", (e) => {
   audio.unlock();
   if (b.dataset.up) { buyUpgrade(b.dataset.up, b); return; }
   if (b.dataset.tab === "look") { pulled = null; sub = "look"; setMode("upgrade"); audio.ui(); return; }
+  if (b.id === "gem-nav") { autoT = -1; openGems(); audio.ui(); return; }
+  if (b.id === "set-open") { $("setp").hidden = false; audio.ui(); return; }
+  if (b.id === "set-close") { $("setp").hidden = true; audio.ui(); return; }
   if (b.id === "rank-open") { sub = "rank"; setMode("upgrade"); rankLoad(); audio.ui(); return; }
   if (b.id === "rank-set") {
     save.name = [...$("rank-name").value.normalize("NFKC").replace(/\s+/g, " ").trim()].slice(0, 8).join("");
@@ -4533,7 +4635,7 @@ document.addEventListener("click", (e) => {
   if (b.id === "quest-open") { renderQuest(); $("quest").hidden = false; audio.ui(); return; }
   if (b.id === "quest-close") { $("quest").hidden = true; audio.ui(); return; }
   if (b.dataset.quest) { takeQuest(b.dataset.quest); return; }
-  if (b.id === "xf-open") { xfSure = false; $("xf-get").classList.remove("sure"); $("xf-get").textContent = "受け取る"; $("xf-code").hidden = true; $("xf-put").textContent = "引き継ぎコードを出す"; xfMsg("受け取ると この端末の記録は消えて 置き換わります"); $("xfer").hidden = false; audio.ui(); return; }
+  if (b.id === "xf-open") { $("setp").hidden = true; xfSure = false; $("xf-get").classList.remove("sure"); $("xf-get").textContent = "受け取る"; $("xf-code").hidden = true; $("xf-put").textContent = "引き継ぎコードを出す"; xfMsg("受け取ると この端末の記録は消えて 置き換わります"); $("xfer").hidden = false; audio.ui(); return; }
   if (b.id === "xf-close") { $("xfer").hidden = true; audio.ui(); return; }
   if (b.id === "xf-put") { xferPut(); audio.ui(); return; }
   if (b.id === "xf-get") { xferGet(); audio.ui(); return; }
