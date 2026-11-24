@@ -4689,6 +4689,7 @@ function checkGift() {
   $("gift").hidden = false;
 }
 function takeGift(mul) {
+  window.TakeyariNotify?.ask();   // 毎日の配給を通知で知らせてよいか（Android 13 以上で まだ許されていなければ聞く）
   if (!gift) return;
   save.coins += gift.sum * mul;
   save.gem += gift.gem || 0;
