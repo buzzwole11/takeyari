@@ -486,7 +486,7 @@
   <div id="shop-say" hidden></div>
   <button class="reward slim" data-action="free"><svg class="ic"><use href="#i-play"/></svg> 広告で 強化を1回タダ <span class="mono" data-free></span></button>
   <button id="start" class="primary" data-action="start">出撃</button>
-  <div><button class="pp-link" id="xf-open">引き継ぎ</button><button class="pp-link" id="pp-open">個人情報方針</button></div>
+  <div><button class="pp-link" id="xf-open">引き継ぎ</button><button class="pp-link" id="pp-open">個人情報方針</button><button class="pp-link" id="tk-open">特商法の表記</button></div>
 </section>
 
 <section id="pause" class="screen" hidden>
@@ -4513,7 +4513,7 @@ document.addEventListener("click", (e) => {
   if (b.dataset.look) { lookKind = b.dataset.look; pulled = null; refreshShops(); audio.ui(); return; }
   if (b.dataset.charm) { charmSel = Number(b.dataset.charm); refreshShops(); audio.ui(); return; }
   if (b.dataset.buy) { if (shop) shop.buy(b.dataset.buy); audio.ui(); return; }
-  if (b.id === "pp-open") { $("pp-frame").src = "privacy.html"; $("pp").hidden = false; audio.ui(); return; }
+  if (b.id === "pp-open" || b.id === "tk-open") { $("pp-frame").src = b.id === "pp-open" ? "privacy.html" : "tokushoho.html"; $("pp").hidden = false; audio.ui(); return; }
   if (b.id === "pp-close") { $("pp").hidden = true; audio.ui(); return; }
   if (b.id === "gem-open" || b.id === "res-noads") { autoT = -1; openGems(); audio.ui(); return; }
   if (b.id === "quest-open") { renderQuest(); $("quest").hidden = false; audio.ui(); return; }
